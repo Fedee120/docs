@@ -1,0 +1,401 @@
+---
+title: 'List Check'
+api: 'POST /kyc'
+---
+
+Check entities against KYC watchlists (OFAC, UN, SENACLAFT, etc.) to identify sanctions, PEPs (Politically Exposed Persons), and other risk entities.
+
+## Endpoint
+
+```
+POST /kyc
+```
+
+## Authentication
+
+Requires `kyc:create` permission. Include your Bearer token in the Authorization header.
+
+## Request Body Parameters
+
+<ParamFields>
+  <ParamField
+    name="subject"
+    type="object"
+    required
+    description="Entity information to check against watchlists"
+  >
+    <ParamField
+      name="full_name"
+      type="string"
+      description="Full name of the entity (required if no identifiers provided)"
+    />
+    <ParamField
+      name="document_id"
+      type="string"
+      description="Document ID (passport, ID card, etc.)"
+    />
+    <ParamField
+      name="document_type"
+      type="string"
+      description="Type of document (e.g., 'Passport', 'CI', 'DNI')"
+    />
+    <ParamField
+      name="nationality"
+      type="string"
+      description="Country code (e.g., 'US', 'UY')"
+    />
+    <ParamField
+      name="birth_date"
+      type="string"
+      description="Birth date in ISO format (YYYY-MM-DD)"
+    />
+    <ParamField
+      name="wallet_address"
+      type="string"
+      description="Cryptocurrency wallet address (e.g., Ethereum, Bitcoin)"
+    />
+    <ParamField
+      name="identifiers"
+      type="array"
+      description="Array of identifier objects with 'type' and 'value' fields"
+    />
+    <ParamField
+      name="additional_names"
+      type="array"
+      description="Array of alternative names or aliases"
+    />
+  </ParamField>
+  <ParamField
+    name="list_name"
+    type="string"
+    description="Single list to check against (for single-list checks)"
+  />
+  <ParamField
+    name="lists"
+    type="array"
+    description="Array of list names to check against (for multi-list checks)"
+  />
+  <ParamField
+    name="search_type"
+    type="string"
+    description="Matching strategy: 'exact', 'fuzzy', 'token', 'composite', or 'llm_enhanced' (default: 'composite')"
+  />
+</ParamFields>
+
+## Subject Parameter Details
+
+### Required Fields
+
+At least one of the following must be provided:
+
+| Field | Required If | Description |
+|-------|-------------|-------------|
+| `full_name` | No identifiers provided | Full name of the entity |
+| `document_id` | No full_name provided | Government-issued ID |
+| `wallet_address` | No full_name provided | Cryptocurrency wallet |
+| `identifiers` | No full_name provided | Array of identifier objects |
+
+### Optional Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `document_type` | string | Document type: "Passport", "CI", "DNI", etc. |
+| `nationality` | string | Two-letter country code (ISO 3166-1 alpha-2) |
+| `birth_date` | string | Birth date in ISO format: YYYY-MM-DD |
+| `additional_names` | array | Alternative names, aliases, or name variations |
+| `identifiers` | array | Additional identifiers (see format below) |
+
+### Identifiers Array Format
+
+When using the `identifiers` field, provide an array of objects:
+
+```json
+{
+  "identifiers": [
+    {
+      "type": "Ethereum Wallet",
+      "value": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
+    },
+    {
+      "type": "Bitcoin Address",
+      "value": "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"
+    },
+    {
+      "type": "Passport",
+      "value": "AB1234567"
+    }
+  ]
+}
+```
+
+## Available Watchlists
+
+| List Name | Description | Entity Types Supported |
+|-----------|-------------|------------------------|
+| `ofac` | OFAC Sanctions List (US Treasury) | Persons, Organizations |
+| `un` | UN Security Council Sanctions | Persons, Organizations |
+| `senaclaft_uy` | SENACLAFT Uruguay (PEP & Sanctions) | Persons |
+| `eu` | EU Consolidated Financial Sanctions | Persons, Organizations |
+
+## Search Types
+
+| Type | Description | Use Case |
+|------|-------------|----------|
+| `exact` | Exact name matching | High precision, strict matching |
+| `fuzzy` | Approximate string matching | Handle typos and variations |
+| `token` | Word-based matching | Find partial name matches |
+| `composite` | Combined strategy (default) | Balanced precision and recall |
+| `llm_enhanced` | LLM-filtered matching | Maximum precision with semantic filtering |
+
+## Request Examples
+
+### Check Person by Full Name
+
+<RequestExample>
+```bash
+curl -X POST https://dev.kyc.legaltalent.ai/kyc \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "subject": {
+      "full_name": "John Doe",
+      "nationality": "US",
+      "birth_date": "1985-03-15"
+    },
+    "list_name": "ofac",
+    "search_type": "composite"
+  }'
+```
+</RequestExample>
+
+### Check Person with Document ID
+
+<RequestExample>
+```bash
+curl -X POST https://dev.kyc.legaltalent.ai/kyc \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "subject": {
+      "full_name": "Juan Pérez",
+      "document_id": "12345678",
+      "document_type": "CI",
+      "nationality": "UY"
+    },
+    "list_name": "senaclaft_uy"
+  }'
+```
+</RequestExample>
+
+### Check Cryptocurrency Wallet
+
+<RequestExample>
+```bash
+curl -X POST https://dev.kyc.legaltalent.ai/kyc \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "subject": {
+      "wallet_address": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
+    },
+    "list_name": "ofac"
+  }'
+```
+</RequestExample>
+
+### Check Multiple Lists (Synchronous)
+
+<RequestExample>
+```bash
+curl -X POST https://dev.kyc.legaltalent.ai/kyc \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "subject": {
+      "full_name": "John Doe",
+      "nationality": "US"
+    },
+    "lists": ["ofac", "un", "eu"],
+    "search_type": "composite"
+  }'
+```
+</RequestExample>
+
+### Check with Multiple Identifiers
+
+<RequestExample>
+```bash
+curl -X POST https://dev.kyc.legaltalent.ai/kyc \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "subject": {
+      "full_name": "John Doe",
+      "identifiers": [
+        {
+          "type": "Ethereum Wallet",
+          "value": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
+        },
+        {
+          "type": "Bitcoin Address",
+          "value": "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"
+        }
+      ]
+    },
+    "list_name": "ofac"
+  }'
+```
+</RequestExample>
+
+## Response Format
+
+### Success Response (Single List)
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "result": {
+    "is_match": true,
+    "list_name": "ofac",
+    "match_count": 1,
+    "matches": [
+      {
+        "entity_id": "12345",
+        "name": "John Doe",
+        "confidence_score": 0.95,
+        "match_type": "composite",
+        "source_list": "ofac",
+        "programs": ["SDGT"],
+        "details": {
+          "normalized_name": "JOHN DOE",
+          "aliases": ["Johnny Doe"]
+        }
+      }
+    ],
+    "processing_time_ms": 1250
+  },
+  "execution_context": {
+    "request_id": "abc-123-def",
+    "processing_time_ms": 1250,
+    "timestamp": "2024-11-22T10:30:00Z"
+  }
+}
+```
+</ResponseExample>
+
+### Success Response (Multiple Lists)
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "request_type": "synchronous",
+  "summary": {
+    "total_lists": 3,
+    "successful_validations": 3,
+    "failed_validations": 0,
+    "matches_found": 1,
+    "has_any_match": true,
+    "overall_risk_level": "HIGH"
+  },
+  "results": {
+    "ofac": {
+      "is_match": true,
+      "match_count": 1,
+      "matches": [...]
+    },
+    "un": {
+      "is_match": false,
+      "match_count": 0,
+      "matches": []
+    },
+    "eu": {
+      "is_match": false,
+      "match_count": 0,
+      "matches": []
+    }
+  },
+  "execution_context": {
+    "request_id": "abc-123-def",
+    "processing_time_ms": 3200,
+    "timestamp": "2024-11-22T10:30:00Z"
+  }
+}
+```
+</ResponseExample>
+
+### No Match Response
+
+<ResponseExample>
+```json
+{
+  "status": "success",
+  "result": {
+    "is_match": false,
+    "list_name": "ofac",
+    "match_count": 0,
+    "matches": [],
+    "processing_time_ms": 850
+  },
+  "execution_context": {
+    "request_id": "abc-123-def",
+    "processing_time_ms": 850,
+    "timestamp": "2024-11-22T10:30:00Z"
+  }
+}
+```
+</ResponseExample>
+
+## Error Responses
+
+### 400 Bad Request - Missing Subject
+
+<ResponseExample>
+```json
+{
+  "status": "error",
+  "error": {
+    "type": "ValidationError",
+    "message": "Subject must have either full_name or identifiers",
+    "code": "VALIDATION_ERROR"
+  }
+}
+```
+</ResponseExample>
+
+### 400 Bad Request - Invalid List
+
+<ResponseExample>
+```json
+{
+  "status": "error",
+  "error": {
+    "type": "ListNotFoundError",
+    "message": "List 'invalid_list' not found",
+    "code": "LIST_NOT_FOUND"
+  }
+}
+```
+</ResponseExample>
+
+### 403 Forbidden - Missing Permission
+
+<ResponseExample>
+```json
+{
+  "message": "User is not authorized to perform this action"
+}
+```
+</ResponseExample>
+
+## Status Codes
+
+| Code | Description |
+|------|-------------|
+| 200 | Success - Check completed |
+| 400 | Bad Request - Invalid parameters |
+| 401 | Unauthorized - Missing or invalid token |
+| 403 | Forbidden - Insufficient permissions |
+| 500 | Internal Server Error |
+

@@ -1,0 +1,393 @@
+---
+title: 'Adverse Media Check'
+api: 'POST /kyc/adverse-media'
+---
+
+Perform adverse media analysis on entities to identify negative news, sanctions, criminal records, and other risk factors beyond traditional watchlist checks.
+
+## Endpoint
+
+```
+POST /kyc/adverse-media
+```
+
+## Authentication
+
+Requires `kyc:create` permission. Include your Bearer token in the Authorization header.
+
+## Description
+
+The adverse media check uses AI-powered analysis to search and evaluate publicly available information about an entity. It performs:
+
+1. **Parallel web searches** across multiple sources
+2. **LLM analysis** to filter and evaluate findings
+3. **Risk scoring** based on identified adverse media
+4. **Structured reporting** with source citations
+
+This complements traditional watchlist checks by finding information that may not yet be in official sanctions lists.
+
+## Request Body Parameters
+
+<ParamFields>
+  <ParamField
+    name="name"
+    type="string"
+    required
+    description="Name of the entity to analyze"
+  />
+  <ParamField
+    name="country"
+    type="string"
+    description="Country of residence/operation (helps disambiguate common names)"
+  />
+  <ParamField
+    name="age"
+    type="integer"
+    description="Age of individual (helps disambiguate common names)"
+  />
+  <ParamField
+    name="additional_info"
+    type="string"
+    description="Additional context information (company, position, etc.)"
+  />
+  <ParamField
+    name="provider"
+    type="string"
+    description="LLM provider: 'bedrock' (default) or 'openai'"
+  />
+  <ParamField
+    name="model"
+    type="string"
+    description="Model identifier (for OpenAI provider, e.g., 'gpt-4.1-mini')"
+  />
+</ParamFields>
+
+## Request Examples
+
+### Basic Adverse Media Check
+
+<RequestExample>
+```bash
+curl -X POST https://dev.kyc.legaltalent.ai/kyc/adverse-media \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "John Doe"
+  }'
+```
+</RequestExample>
+
+### With Additional Context
+
+<RequestExample>
+```bash
+curl -X POST https://dev.kyc.legaltalent.ai/kyc/adverse-media \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "John Doe",
+    "country": "US",
+    "age": 45,
+    "additional_info": "CEO of Tech Corp, based in New York"
+  }'
+```
+</RequestExample>
+
+### Using OpenAI Provider
+
+<RequestExample>
+```bash
+curl -X POST https://dev.kyc.legaltalent.ai/kyc/adverse-media \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "John Doe",
+    "country": "US",
+    "provider": "openai",
+    "model": "gpt-4.1-mini"
+  }'
+```
+</RequestExample>
+
+## Response Format
+
+### Success Response
+
+<ResponseExample>
+```json
+{
+  "final_risk_score": 75,
+  "decision": "HIGH_RISK",
+  "executive_summary": "Multiple adverse media findings identified including fraud allegations and regulatory violations.",
+  "adverse_sources": [
+    {
+      "source_id": 0,
+      "title": "Tech Executive Charged with Fraud",
+      "url": "https://example.com/news/article1",
+      "summary": "John Doe, CEO of Tech Corp, faces fraud charges...",
+      "relevance_score": 0.95,
+      "risk_factors": ["fraud", "financial_crime"]
+    },
+    {
+      "source_id": 1,
+      "title": "SEC Investigation into Tech Corp",
+      "url": "https://example.com/news/article2",
+      "summary": "SEC investigating Tech Corp for securities violations...",
+      "relevance_score": 0.88,
+      "risk_factors": ["regulatory_violation"]
+    }
+  ],
+  "search_metadata": {
+    "total_sources_searched": 50,
+    "sources_with_findings": 2,
+    "search_time_seconds": 3.2,
+    "analysis_time_seconds": 2.8
+  },
+  "processing_time_ms": 6000,
+  "timestamp": "2024-11-22T10:30:00Z"
+}
+```
+</ResponseExample>
+
+### Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `final_risk_score` | integer | Risk score from 0-100 (higher = higher risk) |
+| `decision` | string | Risk decision: `CLEAR`, `LOW_RISK`, `MEDIUM_RISK`, or `HIGH_RISK` |
+| `executive_summary` | string | Summary of findings and risk assessment |
+| `adverse_sources` | array | List of adverse media sources found (empty if CLEAR) |
+| `search_metadata` | object | Metadata about the search process |
+| `processing_time_ms` | integer | Total processing time in milliseconds |
+| `timestamp` | string | ISO 8601 timestamp of the analysis |
+
+### Adverse Source Fields
+
+Each adverse source includes:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `source_id` | integer | Unique source identifier |
+| `title` | string | Title of the source/article |
+| `url` | string | URL to the source |
+| `summary` | string | LLM-generated summary of the source |
+| `relevance_score` | float | Relevance score 0.0-1.0 |
+| `risk_factors` | array | Array of risk factor tags (e.g., "fraud", "sanctions") |
+
+### Decision Values
+
+| Decision | Score Range | Description |
+|----------|-------------|-------------|
+| `CLEAR` | 0-20 | No significant adverse media found |
+| `LOW_RISK` | 21-40 | Minor adverse findings |
+| `MEDIUM_RISK` | 41-70 | Moderate adverse findings requiring review |
+| `HIGH_RISK` | 71-100 | Significant adverse findings, strong risk indicators |
+
+### Clear Response (No Adverse Media)
+
+<ResponseExample>
+```json
+{
+  "final_risk_score": 5,
+  "decision": "CLEAR",
+  "executive_summary": "No significant adverse media findings identified for this entity.",
+  "adverse_sources": [],
+  "search_metadata": {
+    "total_sources_searched": 50,
+    "sources_with_findings": 0,
+    "search_time_seconds": 3.1,
+    "analysis_time_seconds": 2.5
+  },
+  "processing_time_ms": 5600,
+  "timestamp": "2024-11-22T10:30:00Z"
+}
+```
+</ResponseExample>
+
+## Error Responses
+
+### 400 Bad Request - Missing Name
+
+<ResponseExample>
+```json
+{
+  "error": "Validation error: 'name' parameter is required"
+}
+```
+</ResponseExample>
+
+### 500 Internal Server Error - Configuration Error
+
+<ResponseExample>
+```json
+{
+  "error": "Configuration error: TAVILY_API_KEY not set"
+}
+```
+</ResponseExample>
+
+### 500 Internal Server Error - Analysis Failed
+
+<ResponseExample>
+```json
+{
+  "error": "Adverse media analysis failed",
+  "message": "LLM analysis timeout after retries"
+}
+```
+</ResponseExample>
+
+## Status Codes
+
+| Code | Description |
+|------|-------------|
+| 200 | Success - Analysis completed |
+| 400 | Bad Request - Invalid parameters |
+| 401 | Unauthorized - Missing or invalid token |
+| 403 | Forbidden - Insufficient permissions |
+| 500 | Internal Server Error |
+
+## Usage Examples
+
+### Python Example
+
+<RequestExample>
+```python
+import requests
+
+token = "YOUR_TOKEN"
+
+response = requests.post(
+    "https://dev.kyc.legaltalent.ai/kyc/adverse-media",
+    headers={
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    },
+    json={
+        "name": "John Doe",
+        "country": "US",
+        "age": 45,
+        "additional_info": "CEO of Tech Corp"
+    }
+)
+
+if response.status_code == 200:
+    data = response.json()
+    print(f"Risk Score: {data['final_risk_score']}")
+    print(f"Decision: {data['decision']}")
+    print(f"Summary: {data['executive_summary']}")
+    
+    if data['adverse_sources']:
+        print(f"\nFound {len(data['adverse_sources'])} adverse sources:")
+        for source in data['adverse_sources']:
+            print(f"- {source['title']}: {source['url']}")
+else:
+    print(f"Error: {response.json()}")
+```
+</RequestExample>
+
+### JavaScript Example
+
+<RequestExample>
+```javascript
+const token = "YOUR_TOKEN";
+
+async function checkAdverseMedia(name, country, age) {
+  const response = await fetch(
+    "https://dev.kyc.legaltalent.ai/kyc/adverse-media",
+    {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        name: name,
+        country: country,
+        age: age
+      })
+    }
+  );
+  
+  const data = await response.json();
+  
+  if (response.ok) {
+    console.log(`Risk Score: ${data.final_risk_score}`);
+    console.log(`Decision: ${data.decision}`);
+    console.log(`Summary: ${data.executive_summary}`);
+    
+    if (data.adverse_sources.length > 0) {
+      console.log(`\nFound ${data.adverse_sources.length} adverse sources`);
+      data.adverse_sources.forEach(source => {
+        console.log(`- ${source.title}: ${source.url}`);
+      });
+    }
+    
+    return data;
+  } else {
+    console.error("Error:", data.error);
+    throw new Error(data.error);
+  }
+}
+```
+</RequestExample>
+
+## Search Process
+
+The adverse media check performs parallel searches across multiple categories:
+
+1. **Fraud/Corruption/Sanctions**: Financial crimes, corruption, sanctions
+2. **Criminal Records**: Arrests, investigations, convictions
+3. **Sanction Lists**: OFAC, UN, and other official sanctions
+4. **Professional Validation**: LinkedIn, professional profiles
+5. **General News**: Recent news articles and media coverage
+
+Results are then analyzed by an LLM to:
+- Filter false positives
+- Evaluate relevance
+- Assess risk factors
+- Generate summaries
+
+## Provider Options
+
+### AWS Bedrock (Default)
+
+- **Provider**: `"bedrock"`
+- **Model**: Uses default Bedrock model
+- **Use Case**: Production deployments on AWS
+
+### OpenAI
+
+- **Provider**: `"openai"`
+- **Model**: Specify model (e.g., `"gpt-4.1-mini"`)
+- **Use Case**: High-precision analysis, specific model requirements
+
+## Performance
+
+- **Typical Response Time**: 5-10 seconds
+- **Timeout**: 30 seconds maximum
+- **Retries**: Automatic retries on timeout (up to 3 attempts)
+- **Search Sources**: 50+ sources per request
+- **LLM Analysis**: Includes timeout protection and error handling
+
+## Integration Tips
+
+1. **Combine with Watchlist Checks**: Use adverse media as a supplement to traditional watchlist checks
+2. **Use Context**: Provide country, age, and additional info to improve accuracy
+3. **Handle Timeouts**: Implement retry logic for production use
+4. **Review Scores**: Risk scores should be reviewed by compliance teams, not automated
+5. **Source Verification**: Always verify adverse sources before making decisions
+
+## Best Practices
+
+- Use adverse media checks for:
+  - Enhanced due diligence
+  - Ongoing monitoring
+  - Risk assessment for high-value relationships
+  - Compliance investigations
+
+- Combine with traditional watchlist checks for comprehensive risk screening
+- Review `executive_summary` for human-readable assessment
+- Check `adverse_sources` URLs to verify findings
+- Use risk scores as indicators, not definitive decisions
+

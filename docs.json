@@ -51,18 +51,31 @@
         "tab": "API reference",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Getting started",
             "pages": [
-              "api-reference/introduction"
+              "api-reference/introduction",
+              "api-reference/auth"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Core endpoints",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "api-reference/list-check",
+              "api-reference/adverse-media",
+              "api-reference/health"
+            ]
+          },
+          {
+            "group": "Watchlists",
+            "pages": [
+              "api-reference/watchlists"
+            ]
+          },
+          {
+            "group": "Data & analytics",
+            "pages": [
+              "api-reference/export",
+              "api-reference/usage"
             ]
           }
         ]

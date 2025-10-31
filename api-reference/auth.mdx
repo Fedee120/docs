@@ -1,0 +1,124 @@
+---
+title: 'Authentication'
+api: 'Bearer Authentication'
+---
+
+All API requests require authentication using Bearer tokens. The token is sent in the `Authorization` header of every request.
+
+## Header Format
+
+All authenticated requests must include the following header:
+
+```http
+Authorization: Bearer <token>
+```
+
+The token can be either:
+- **JWT Token**: An ID token from your authentication provider (Cognito)
+- **API Key**: A service-to-service API key generated via the auth service
+
+## Token Types
+
+### JWT Tokens (User Authentication)
+
+JWT tokens are issued when users log in through your authentication provider. These tokens are temporary and expire after a set period (typically 1 hour).
+
+**When to use**: Web applications, mobile apps, user-facing integrations
+
+### API Keys (Machine-to-Machine)
+
+API keys are permanent credentials for server-to-server integrations. They are generated via the auth service and associated with a specific role.
+
+**When to use**: Backend services, automated integrations, scheduled jobs
+
+## Example Requests
+
+### Using JWT Token
+
+```bash
+curl -X POST https://dev.kyc.legaltalent.ai/kyc \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "subject": {"full_name": "John Doe"},
+    "list_name": "ofac"
+  }'
+```
+
+### Using API Key
+
+```bash
+curl -X POST https://dev.kyc.legaltalent.ai/kyc \
+  -H "Authorization: Bearer sk_a1b2c3d4e5f6..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "subject": {"full_name": "John Doe"},
+    "list_name": "ofac"
+  }'
+```
+
+## Token Validation
+
+The authorization service automatically:
+- Validates the token format and signature
+- Extracts tenant identification from the token
+- Verifies required permissions for the requested operation
+- Passes tenant context to the backend Lambda functions
+
+You do **not** need to include `tenant_id` in request bodies - it is automatically extracted from your token.
+
+## Permissions
+
+Each token is associated with specific permissions. The required permission varies by endpoint:
+
+| Endpoint | Required Permission |
+|----------|-------------------|
+| `POST /kyc` | `kyc:create` |
+| `GET /kyc/{job_id}` | `kyc:read` |
+| `GET /exports/{jobId}` | `kyc:export` |
+| `GET /kyc/watchlists` | `watchlist:list` |
+| `POST /kyc/watchlists` | `watchlist:create` |
+| `GET /kyc/usage` | `usage:read` |
+| `POST /kyc/adverse-media` | `kyc:create` |
+
+## Error Responses
+
+### 401 Unauthorized
+
+```json
+{
+  "message": "Unauthorized"
+}
+```
+
+This occurs when:
+- The `Authorization` header is missing
+- The token format is invalid
+- The token has expired (JWT tokens only)
+
+### 403 Forbidden
+
+```json
+{
+  "message": "User is not authorized to perform this action"
+}
+```
+
+This occurs when:
+- The token is valid but lacks required permissions
+- The token's associated role doesn't grant access to the resource
+
+## Getting API Keys
+
+To generate an API key for machine-to-machine authentication:
+
+1. Contact your account administrator
+2. Provide the intended use case and required permissions
+3. The API key will be generated with appropriate role-based permissions
+
+For security, API keys should be:
+- Stored securely (environment variables, secrets manager)
+- Never committed to version control
+- Rotated periodically
+- Revoked immediately if compromised
+
