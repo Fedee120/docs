@@ -36,7 +36,7 @@ API keys are permanent credentials for server-to-server integrations. They are g
 ### Using JWT Token
 
 ```bash
-curl -X POST https://dev.kyc.legaltalent.ai/kyc \
+curl -X POST https://stg.kyc.legaltalent.ai/kyc \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -48,7 +48,7 @@ curl -X POST https://dev.kyc.legaltalent.ai/kyc \
 ### Using API Key
 
 ```bash
-curl -X POST https://dev.kyc.legaltalent.ai/kyc \
+curl -X POST https://stg.kyc.legaltalent.ai/kyc \
   -H "Authorization: Bearer sk_a1b2c3d4e5f6..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -69,17 +69,35 @@ You do **not** need to include `tenant_id` in request bodies - it is automatical
 
 ## Permissions
 
-Each token is associated with specific permissions. The required permission varies by endpoint:
+Each token is associated with specific permissions following the `resource:action` pattern. The required permission varies by endpoint:
 
-| Endpoint | Required Permission |
-|----------|-------------------|
-| `POST /kyc` | `kyc:create` |
-| `GET /kyc/{job_id}` | `kyc:read` |
-| `GET /exports/{jobId}` | `kyc:export` |
-| `GET /kyc/watchlists` | `watchlist:list` |
-| `POST /kyc/watchlists` | `watchlist:create` |
-| `GET /kyc/usage` | `usage:read` |
-| `POST /kyc/adverse-media` | `kyc:create` |
+### KYC Operations
+
+| Endpoint | Method | Required Permission | Description |
+|----------|--------|-------------------|-------------|
+| `/kyc` | `POST` | `kyc:create` | Initiate a new KYC check |
+| `/kyc/{job_id}` | `GET` | `kyc:read` | View KYC check results |
+| `/exports/{jobId}` | `GET` | `kyc:export` | Export KYC results (PDF) |
+| `/kyc/adverse-media` | `POST` | `kyc:create` | Perform adverse media check |
+
+### Watchlist Operations
+
+| Endpoint | Method | Required Permission | Description |
+|----------|--------|-------------------|-------------|
+| `/kyc/watchlists` | `POST` | `watchlist:create` | Create a new watchlist |
+| `/kyc/watchlists` | `GET` | `watchlist:list` | List all watchlists |
+| `/kyc/watchlists/{id}` | `GET` | `watchlist:read` | Get watchlist details |
+| `/kyc/watchlists/{id}` | `PATCH` | `watchlist:update` | Update watchlist config |
+| `/kyc/watchlists/{id}` | `DELETE` | `watchlist:delete` | Delete a watchlist |
+| `/kyc/watchlists/{id}/subjects` | `POST` | `watchlist:update` | Add subject to watchlist |
+| `/kyc/watchlists/{id}/subjects/batch` | `POST` | `watchlist:update` | Batch add subjects |
+| `/kyc/watchlists/{id}/subjects/{subject_id}` | `DELETE` | `watchlist:update` | Remove subject |
+
+### Usage & Monitoring
+
+| Endpoint | Method | Required Permission | Description |
+|----------|--------|-------------------|-------------|
+| `/kyc/usage` | `GET` | `usage:read` | View usage metrics |
 
 ## Error Responses
 

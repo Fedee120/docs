@@ -147,32 +147,31 @@ When using the `identifiers` field, provide an array of objects:
 | `composite` | Combined strategy (default) | Balanced precision and recall |
 | `llm_enhanced` | LLM-filtered matching | Maximum precision with semantic filtering |
 
-## Request Examples
-
-### Check Person by Full Name
+## Request Example
 
 <RequestExample>
-```bash
-curl -X POST https://dev.kyc.legaltalent.ai/kyc \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "subject": {
-      "full_name": "John Doe",
-      "nationality": "US",
-      "birth_date": "1985-03-15"
-    },
-    "list_name": "ofac",
-    "search_type": "composite"
-  }'
+```bash Request
+  curl -X POST https://stg.kyc.legaltalent.ai/kyc \
+    -H "Authorization: Bearer YOUR_TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "subject": {
+        "full_name": "John Doe",
+        "nationality": "US",
+        "birth_date": "1985-03-15"
+      },
+      "list_name": "ofac",
+      "search_type": "composite"
+    }'
 ```
 </RequestExample>
 
+## Additional Request Examples
+
 ### Check Person with Document ID
 
-<RequestExample>
 ```bash
-curl -X POST https://dev.kyc.legaltalent.ai/kyc \
+curl -X POST https://stg.kyc.legaltalent.ai/kyc \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -185,13 +184,11 @@ curl -X POST https://dev.kyc.legaltalent.ai/kyc \
     "list_name": "senaclaft_uy"
   }'
 ```
-</RequestExample>
 
 ### Check Cryptocurrency Wallet
 
-<RequestExample>
 ```bash
-curl -X POST https://dev.kyc.legaltalent.ai/kyc \
+curl -X POST https://stg.kyc.legaltalent.ai/kyc \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -201,13 +198,11 @@ curl -X POST https://dev.kyc.legaltalent.ai/kyc \
     "list_name": "ofac"
   }'
 ```
-</RequestExample>
 
 ### Check Multiple Lists (Synchronous)
 
-<RequestExample>
 ```bash
-curl -X POST https://dev.kyc.legaltalent.ai/kyc \
+curl -X POST https://stg.kyc.legaltalent.ai/kyc \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -219,13 +214,11 @@ curl -X POST https://dev.kyc.legaltalent.ai/kyc \
     "search_type": "composite"
   }'
 ```
-</RequestExample>
 
 ### Check with Multiple Identifiers
 
-<RequestExample>
 ```bash
-curl -X POST https://dev.kyc.legaltalent.ai/kyc \
+curl -X POST https://stg.kyc.legaltalent.ai/kyc \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -245,14 +238,13 @@ curl -X POST https://dev.kyc.legaltalent.ai/kyc \
     "list_name": "ofac"
   }'
 ```
-</RequestExample>
 
 ## Response Format
 
 ### Success Response (Single List)
 
 <ResponseExample>
-```json
+```json Success Response
 {
   "status": "success",
   "result": {
@@ -287,7 +279,7 @@ curl -X POST https://dev.kyc.legaltalent.ai/kyc \
 ### Success Response (Multiple Lists)
 
 <ResponseExample>
-```json
+```json Multiple Lists Response
 {
   "status": "success",
   "request_type": "synchronous",
@@ -328,7 +320,7 @@ curl -X POST https://dev.kyc.legaltalent.ai/kyc \
 ### No Match Response
 
 <ResponseExample>
-```json
+```json No Match Response
 {
   "status": "success",
   "result": {
@@ -352,7 +344,7 @@ curl -X POST https://dev.kyc.legaltalent.ai/kyc \
 ### 400 Bad Request - Missing Subject
 
 <ResponseExample>
-```json
+```json Error: Missing Subject
 {
   "status": "error",
   "error": {
@@ -367,7 +359,7 @@ curl -X POST https://dev.kyc.legaltalent.ai/kyc \
 ### 400 Bad Request - Invalid List
 
 <ResponseExample>
-```json
+```json Error: Invalid List
 {
   "status": "error",
   "error": {
@@ -382,7 +374,7 @@ curl -X POST https://dev.kyc.legaltalent.ai/kyc \
 ### 403 Forbidden - Missing Permission
 
 <ResponseExample>
-```json
+```json Error: Missing Permission
 {
   "message": "User is not authorized to perform this action"
 }

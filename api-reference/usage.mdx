@@ -19,27 +19,27 @@ Requires `usage:read` permission. Include your Bearer token in the Authorization
 
 <ParamFields>
   <ParamField
-    name="granularity"
+    query="granularity"
     type="string"
     description="Time granularity: 'hour', 'day', or 'month' (default: 'day')"
   />
   <ParamField
-    name="year_month"
+    query="year_month"
     type="string"
     description="Month in format 'YYYY-MM' (default: current month) - used for 'hour' and 'day' granularities"
   />
   <ParamField
-    name="date"
+    query="date"
     type="string"
     description="Date in format 'YYYY-MM-DD' (required when granularity='hour')"
   />
   <ParamField
-    name="months"
+    query="months"
     type="integer"
     description="Number of months to retrieve (1-12, default: 1) - used for 'month' granularity"
   />
   <ParamField
-    name="cache_bust"
+    query="cache_bust"
     type="string"
     description="Set to 'true', '1', or 'yes' to bypass cache and return fresh data"
   />
@@ -53,58 +53,47 @@ Requires `usage:read` permission. Include your Bearer token in the Authorization
 | `day` | Daily data points for a specific month | Default, up to 30 days |
 | `month` | Monthly data points for up to 12 months | Default: 1 month |
 
-## Request Examples
+## Request Example
 
-### Daily Granularity (Current Month)
-
-<RequestExample>
 ```bash
-curl "https://dev.kyc.legaltalent.ai/kyc/usage?granularity=day" \
+curl "https://stg.kyc.legaltalent.ai/kyc/usage?granularity=day" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
-</RequestExample>
+
+## Additional Request Examples
 
 ### Daily Granularity (Specific Month)
 
-<RequestExample>
 ```bash
-curl "https://dev.kyc.legaltalent.ai/kyc/usage?granularity=day&year_month=2024-10" \
+curl "https://stg.kyc.legaltalent.ai/kyc/usage?granularity=day&year_month=2024-10" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
-</RequestExample>
 
 ### Hourly Granularity (Specific Day)
 
-<RequestExample>
 ```bash
-curl "https://dev.kyc.legaltalent.ai/kyc/usage?granularity=hour&date=2024-10-27" \
+curl "https://stg.kyc.legaltalent.ai/kyc/usage?granularity=hour&date=2024-10-27" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
-</RequestExample>
 
 ### Monthly Granularity (Last 6 Months)
 
-<RequestExample>
 ```bash
-curl "https://dev.kyc.legaltalent.ai/kyc/usage?granularity=month&months=6" \
+curl "https://stg.kyc.legaltalent.ai/kyc/usage?granularity=month&months=6" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
-</RequestExample>
 
 ### Invalidate Cache
 
-<RequestExample>
 ```bash
-curl "https://dev.kyc.legaltalent.ai/kyc/usage?granularity=day&cache_bust=true" \
+curl "https://stg.kyc.legaltalent.ai/kyc/usage?granularity=day&cache_bust=true" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
-</RequestExample>
 
 ## Response Format
 
 ### Success Response (Daily Granularity)
 
-<ResponseExample>
 ```json
 {
   "tenant_id": "tenant123",
@@ -133,7 +122,6 @@ curl "https://dev.kyc.legaltalent.ai/kyc/usage?granularity=day&cache_bust=true" 
         "watchlist_invocation_count": 600
       }
     }
-    // ... up to 30 days
   ],
   "summary": {
     "total_check_count": 4500,
@@ -144,11 +132,9 @@ curl "https://dev.kyc.legaltalent.ai/kyc/usage?granularity=day&cache_bust=true" 
   }
 }
 ```
-</ResponseExample>
 
 ### Success Response (Hourly Granularity)
 
-<ResponseExample>
 ```json
 {
   "tenant_id": "tenant123",
@@ -177,7 +163,6 @@ curl "https://dev.kyc.legaltalent.ai/kyc/usage?granularity=day&cache_bust=true" 
         "watchlist_invocation_count": 5
       }
     }
-    // ... 24 hours
   ],
   "summary": {
     "total_check_count": 250,
@@ -188,11 +173,9 @@ curl "https://dev.kyc.legaltalent.ai/kyc/usage?granularity=day&cache_bust=true" 
   }
 }
 ```
-</ResponseExample>
 
 ### Success Response (Monthly Granularity)
 
-<ResponseExample>
 ```json
 {
   "tenant_id": "tenant123",
@@ -221,7 +204,6 @@ curl "https://dev.kyc.legaltalent.ai/kyc/usage?granularity=day&cache_bust=true" 
         "watchlist_invocation_count": 54000
       }
     }
-    // ... up to 12 months
   ],
   "summary": {
     "total_check_count": 90000,
@@ -232,7 +214,6 @@ curl "https://dev.kyc.legaltalent.ai/kyc/usage?granularity=day&cache_bust=true" 
   }
 }
 ```
-</ResponseExample>
 
 ## Response Fields
 
@@ -260,13 +241,12 @@ Each data point contains:
 
 ### Python Example
 
-<RequestExample>
 ```python
 import requests
 from datetime import datetime
 
 token = "YOUR_TOKEN"
-base_url = "https://dev.kyc.legaltalent.ai/kyc/usage"
+base_url = "https://stg.kyc.legaltalent.ai/kyc/usage"
 
 # Get daily metrics for current month
 response = requests.get(
@@ -282,17 +262,15 @@ if response.status_code == 200:
     for day in data['data']:
         print(f"{day['timestamp']}: {day['metrics']['check_count']} checks")
 ```
-</RequestExample>
 
 ### JavaScript Example
 
-<RequestExample>
 ```javascript
 const token = "YOUR_TOKEN";
 
 async function getUsageMetrics() {
   const response = await fetch(
-    "https://dev.kyc.legaltalent.ai/kyc/usage?granularity=day",
+    "https://stg.kyc.legaltalent.ai/kyc/usage?granularity=day",
     {
       headers: {
         "Authorization": `Bearer ${token}`
@@ -320,19 +298,16 @@ async function getUsageMetrics() {
   }
 }
 ```
-</RequestExample>
 
 ## Error Responses
 
 ### 400 Bad Request - Invalid Parameters
 
-<ResponseExample>
 ```json
 {
   "error": "Invalid date format. Expected YYYY-MM-DD"
 }
 ```
-</ResponseExample>
 
 Common validation errors:
 - Invalid date format
@@ -343,23 +318,19 @@ Common validation errors:
 
 ### 403 Forbidden - Missing Permission
 
-<ResponseExample>
 ```json
 {
   "error": "Permission denied: usage:read required"
 }
 ```
-</ResponseExample>
 
 ### 403 Forbidden - Missing Tenant
 
-<ResponseExample>
 ```json
 {
   "error": "Unauthorized: missing tenant_id"
 }
 ```
-</ResponseExample>
 
 ## Status Codes
 

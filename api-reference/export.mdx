@@ -1,6 +1,7 @@
 ---
 title: 'Export Results'
 api: 'GET /exports/{jobId}'
+playground: 'none'
 ---
 
 Generate and download PDF reports of completed KYC validation results. Reports include all scan results, matches, and metadata from the original screening.
@@ -19,7 +20,7 @@ Requires `kyc:export` permission. Include your Bearer token in the Authorization
 
 <ParamFields>
   <ParamField
-    name="jobId"
+    path="jobId"
     type="string"
     required
     description="The job/request ID from the KYC submission"
@@ -39,28 +40,24 @@ This endpoint generates a PDF report for a completed KYC check and returns a pre
 
 ## Request Example
 
-<RequestExample>
 ```bash
-curl -X GET "https://dev.kyc.legaltalent.ai/exports/abc-123-def" \
+curl "https://stg.kyc.legaltalent.ai/exports/abc-123-def" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Accept: application/json"
 ```
-</RequestExample>
 
 ## Response Format
 
 ### Success Response
 
-<ResponseExample>
 ```json
 {
   "request_id": "abc-123-def",
   "bucket": "kyc-exports-develop",
   "key": "exports/tenants/tenant123/abc-123-def.pdf",
-  "presigned_url": "https://kyc-exports-develop.s3.amazonaws.com/exports/tenants/tenant123/abc-123-def.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=...&X-Amz-Date=20241122T103000Z&X-Amz-Expires=3600&X-Amz-Signature=..."
+  "presigned_url": "https://kyc-exports-develop.s3.amazonaws.com/exports/tenants/tenant123/abc-123-def.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAIOSFODNN7EXAMPLE&X-Amz-Date=20241122T103000Z&X-Amz-Expires=3600&X-Amz-Signature=abc123def456"
 }
 ```
-</ResponseExample>
 
 ### Response Fields
 
@@ -82,10 +79,9 @@ curl -X GET "https://dev.kyc.legaltalent.ai/exports/abc-123-def" \
 
 ### Download PDF with cURL
 
-<RequestExample>
 ```bash
 # Get presigned URL
-RESPONSE=$(curl -X GET "https://dev.kyc.legaltalent.ai/exports/abc-123-def" \
+RESPONSE=$(curl -X GET "https://stg.kyc.legaltalent.ai/exports/abc-123-def" \
   -H "Authorization: Bearer YOUR_TOKEN")
 
 # Extract presigned URL (using jq)
@@ -94,11 +90,9 @@ URL=$(echo $RESPONSE | jq -r '.presigned_url')
 # Download the PDF
 curl -o report.pdf "$URL"
 ```
-</RequestExample>
 
 ### Python Example
 
-<RequestExample>
 ```python
 import requests
 
@@ -107,7 +101,7 @@ token = "YOUR_TOKEN"
 
 # Get presigned URL
 response = requests.get(
-    f"https://dev.kyc.legaltalent.ai/exports/{job_id}",
+    f"https://stg.kyc.legaltalent.ai/exports/{job_id}",
     headers={"Authorization": f"Bearer {token}"}
 )
 
@@ -124,11 +118,9 @@ if response.status_code == 200:
 else:
     print(f"Error: {response.json()}")
 ```
-</RequestExample>
 
 ### JavaScript/Fetch Example
 
-<RequestExample>
 ```javascript
 const jobId = "abc-123-def";
 const token = "YOUR_TOKEN";
@@ -136,7 +128,7 @@ const token = "YOUR_TOKEN";
 async function downloadReport() {
   // Get presigned URL
   const response = await fetch(
-    `https://dev.kyc.legaltalent.ai/exports/${jobId}`,
+    `https://stg.kyc.legaltalent.ai/exports/${jobId}`,
     {
       method: "GET",
       headers: {
@@ -164,39 +156,32 @@ async function downloadReport() {
   }
 }
 ```
-</RequestExample>
 
 ## Error Responses
 
 ### 400 Bad Request - Missing Job ID
 
-<ResponseExample>
 ```json
 {
   "error": "Missing request_id/job_id"
 }
 ```
-</ResponseExample>
 
 ### 400 Bad Request - Missing Tenant ID
 
-<ResponseExample>
 ```json
 {
   "error": "Missing tenant_id"
 }
 ```
-</ResponseExample>
 
 ### 404 Not Found
 
-<ResponseExample>
 ```json
 {
   "error": "Record not found"
 }
 ```
-</ResponseExample>
 
 This occurs when:
 - The `jobId` is incorrect
@@ -206,14 +191,12 @@ This occurs when:
 
 ### 500 Internal Server Error
 
-<ResponseExample>
 ```json
 {
   "error": "Internal error",
   "message": "Detailed error description"
 }
 ```
-</ResponseExample>
 
 ## Status Codes
 

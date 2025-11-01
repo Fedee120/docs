@@ -1,0 +1,248 @@
+---
+title: 'Add Subjects'
+api: 'POST /kyc/watchlists/{watchlist_id}/subjects'
+description: 'Add subjects to a watchlist individually or in batch'
+---
+
+## Overview
+
+Add one or more subjects to an existing watchlist for ongoing monitoring. Subjects are automatically screened at the next scheduled check interval.
+
+## Add Single Subject
+
+Add one subject at a time.
+
+### Endpoint
+
+```
+POST /kyc/watchlists/{watchlist_id}/subjects
+```
+
+### Authentication
+
+Requires `watchlist:update` permission.
+
+### Path Parameters
+
+<ParamField path="watchlist_id" type="string" required>
+  The unique identifier of the watchlist
+</ParamField>
+
+### Request Body
+
+<ParamField name="full_name" type="string" required>
+  Full name of the subject
+</ParamField>
+
+<ParamField name="identifier" type="string">
+  Document ID, wallet address, email, etc.
+</ParamField>
+
+<ParamField name="identifier_type" type="string">
+  Type of identifier: `document`, `wallet`, `email`, `tax_id`, etc.
+</ParamField>
+
+### Request Example
+
+```bash
+curl -X POST https://stg.kyc.legaltalent.ai/kyc/watchlists/550e8400-e29b-41d4-a716-446655440000/subjects \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "full_name": "Jane Smith",
+    "identifier": "98765432",
+    "identifier_type": "document"
+  }'
+```
+
+### Response
+
+```json
+{
+  "status": "success",
+  "data": {
+    "subject_id": "770e8400-e29b-41d4-a716-446655440003",
+    "full_name": "Jane Smith",
+    "identifier": "98765432",
+    "identifier_type": "document",
+    "added_at": "2024-11-22T11:00:00Z"
+  }
+}
+```
+
+## Add Multiple Subjects (Batch)
+
+Add multiple subjects in a single request for efficiency.
+
+### Endpoint
+
+```
+POST /kyc/watchlists/{watchlist_id}/subjects/batch
+```
+
+### Authentication
+
+Requires `watchlist:update` permission.
+
+### Request Body
+
+<ParamField name="subjects" type="array" required>
+  Array of subject objects to add
+</ParamField>
+
+### Request Example (Batch)
+
+```bash
+curl -X POST https://stg.kyc.legaltalent.ai/kyc/watchlists/550e8400-e29b-41d4-a716-446655440000/subjects/batch \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "subjects": [
+      {
+        "full_name": "Subject 1",
+        "identifier": "ID1",
+        "identifier_type": "document"
+      },
+      {
+        "full_name": "Subject 2",
+        "identifier": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+        "identifier_type": "wallet"
+      },
+      {
+        "full_name": "Subject 3",
+        "identifier": "TAX123456",
+        "identifier_type": "tax_id"
+      }
+    ]
+  }'
+```
+
+### Response
+
+```json
+{
+  "status": "success",
+  "data": {
+    "added_count": 3,
+    "subjects": [
+      {
+        "subject_id": "880e8400-e29b-41d4-a716-446655440004",
+        "full_name": "Subject 1",
+        "identifier": "ID1",
+        "identifier_type": "document",
+        "added_at": "2024-11-22T11:00:00Z"
+      },
+      {
+        "subject_id": "990e8400-e29b-41d4-a716-446655440005",
+        "full_name": "Subject 2",
+        "identifier": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+        "identifier_type": "wallet",
+        "added_at": "2024-11-22T11:00:00Z"
+      },
+      {
+        "subject_id": "aa0e8400-e29b-41d4-a716-446655440006",
+        "full_name": "Subject 3",
+        "identifier": "TAX123456",
+        "identifier_type": "tax_id",
+        "added_at": "2024-11-22T11:00:00Z"
+      }
+    ]
+  }
+}
+```
+
+## Subject Fields
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `full_name` | string | Yes* | Full name of the subject |
+| `identifier` | string | No | Document ID, wallet address, email, etc. |
+| `identifier_type` | string | No | Type: "document", "wallet", "email", etc. |
+
+*Required if no identifier is provided
+
+## Common Identifier Types
+
+| Type | Description | Example |
+|------|-------------|---------|
+| `document` | Government-issued ID | "12345678", "AB123456" |
+| `wallet` | Cryptocurrency wallet | "0x742d35Cc..." |
+| `email` | Email address | "user@example.com" |
+| `tax_id` | Tax identification number | "TAX-987654" |
+| `passport` | Passport number | "AB1234567" |
+
+## Error Responses
+
+### 400 Bad Request
+
+```json
+{
+  "status": "error",
+  "error": {
+    "type": "ValidationError",
+    "message": "Subject must have either full_name or identifier",
+    "code": "VALIDATION_ERROR"
+  }
+}
+```
+
+### 404 Not Found
+
+```json
+{
+  "status": "error",
+  "error": {
+    "type": "NotFoundError",
+    "message": "Watchlist not found",
+    "code": "WATCHLIST_NOT_FOUND"
+  }
+}
+```
+
+## Status Codes
+
+| Code | Description |
+|------|-------------|
+| 200 | Success |
+| 400 | Bad Request - Invalid subject data |
+| 401 | Unauthorized |
+| 403 | Forbidden - Missing `watchlist:update` permission |
+| 404 | Not Found - Watchlist not found |
+| 500 | Internal Server Error |
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use Batch for Multiple Subjects">
+    When adding multiple subjects, always use the batch endpoint (`/subjects/batch`) instead of making multiple single-subject calls. This:
+    - Reduces API calls and stays within rate limits
+    - Improves performance
+    - Simplifies error handling
+  </Accordion>
+  
+  <Accordion title="Provide Identifiers When Possible">
+    While `full_name` alone is sufficient, providing identifiers improves matching accuracy:
+    - More precise matches
+    - Reduces false positives
+    - Better audit trail
+  </Accordion>
+  
+  <Accordion title="Use Descriptive Identifier Types">
+    Use specific identifier types to help with matching:
+    - `document` for government IDs
+    - `wallet` for crypto addresses
+    - `passport` for passport numbers
+    - `tax_id` for tax identifiers
+  </Accordion>
+  
+  <Accordion title="Check Immediately After Adding">
+    For subjects added with `check_frequency: "on_update"`, the watchlist will screen them immediately. For `daily` or `weekly` frequencies, subjects are screened at the next scheduled check.
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+- [Remove subjects](/api-reference/watchlists/remove-subject) when no longer needed
+- [Get watchlist details](/api-reference/watchlists/get) to view all subjects
+- Monitor screening results with [Usage API](/api-reference/usage)
+

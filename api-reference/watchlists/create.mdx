@@ -1,0 +1,431 @@
+---
+title: 'Create Watchlist'
+api: 'POST /kyc/watchlists'
+description: 'Create a new watchlist for ongoing monitoring'
+---
+
+## Endpoint
+
+```
+POST /kyc/watchlists
+```
+
+## Authentication
+
+Requires `watchlist:create` permission.
+
+## Request Body
+
+<ParamField name="name" type="string" required>
+  Descriptive name for the watchlist (e.g., "High Risk Customers", "Vendor Watchlist")
+</ParamField>
+
+<ParamField name="subjects" type="array">
+  Initial subjects to monitor (optional, can add later). Array of subject objects.
+</ParamField>
+
+<ParamField name="lists_to_monitor" type="array">
+  Array of list names to check against. Default: all available lists.
+  
+  Options: `["ofac", "un", "eu", "senaclaft_uy"]`
+</ParamField>
+
+<ParamField name="check_frequency" type="string">
+  How often to screen subjects. Default: `"daily"`
+  
+  Options:
+  - `"daily"` - Check once per day
+  - `"weekly"` - Check once per week  
+  - `"on_update"` - Only check when subjects are added/modified
+</ParamField>
+
+<ParamField name="alert_config" type="object">
+  Alert configuration (optional)
+  
+  <Expandable title="properties">
+    <ParamField name="on_new_match" type="boolean">
+      Send alert when new matches are found
+    </ParamField>
+    <ParamField name="on_status_change" type="boolean">
+      Send alert when subject status changes
+    </ParamField>
+    <ParamField name="webhook_url" type="string">
+      URL to receive webhook notifications
+    </ParamField>
+    <ParamField name="notification_email" type="string">
+      Email address for notifications
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField name="status" type="string">
+  Initial status. Default: `"active"`
+  
+  Options: `"active"` or `"paused"`
+</ParamField>
+
+## Request Example
+
+```bash
+curl -X POST https://stg.kyc.legaltalent.ai/kyc/watchlists \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "High Risk Customers",
+    "check_frequency": "daily",
+    "lists_to_monitor": ["ofac", "un"]
+  }'
+```
+
+## Additional Request Examples
+
+### Watchlist with Initial Subjects
+
+```bash
+curl -X POST https://stg.kyc.legaltalent.ai/kyc/watchlists \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Vendor Monitoring",
+    "subjects": [
+      {
+        "full_name": "John Doe",
+        "identifier": "12345678",
+        "identifier_type": "document"
+      },
+      {
+        "full_name": "Acme Corporation",
+        "identifier": "TAX-987654",
+        "identifier_type": "tax_id"
+      }
+    ],
+    "lists_to_monitor": ["ofac", "un", "eu"],
+    "check_frequency": "weekly",
+    "status": "active"
+  }'
+```
+
+### Watchlist with Alerts
+
+```bash
+curl -X POST https://stg.kyc.legaltalent.ai/kyc/watchlists \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Executive Monitoring",
+    "check_frequency": "daily",
+    "lists_to_monitor": ["ofac", "un"],
+    "alert_config": {
+      "on_new_match": true,
+      "on_status_change": true,
+      "webhook_url": "https://your-server.com/webhooks/kyc",
+      "notification_email": "compliance@example.com"
+    }
+  }'
+```
+
+### Crypto Wallet Monitoring
+
+```bash
+curl -X POST https://stg.kyc.legaltalent.ai/kyc/watchlists \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Crypto Wallets",
+    "subjects": [
+      {
+        "full_name": "Bitcoin Wallet 1",
+        "identifier": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+        "identifier_type": "wallet"
+      }
+    ],
+    "lists_to_monitor": ["ofac"],
+    "check_frequency": "daily"
+  }'
+```
+
+## Usage Examples
+
+### Python
+
+```python
+import requests
+
+url = "https://stg.kyc.legaltalent.ai/kyc/watchlists"
+headers = {
+    "Authorization": "Bearer YOUR_TOKEN",
+    "Content-Type": "application/json"
+}
+
+# Simple watchlist
+payload = {
+    "name": "High Risk Customers",
+    "check_frequency": "daily",
+    "lists_to_monitor": ["ofac", "un"]
+}
+
+response = requests.post(url, json=payload, headers=headers)
+print(response.json())
+
+# Watchlist with subjects
+payload = {
+    "name": "Vendor Monitoring",
+    "subjects": [
+        {
+            "full_name": "John Doe",
+            "identifier": "12345678",
+            "identifier_type": "document"
+        },
+        {
+            "full_name": "Acme Corporation",
+            "identifier": "TAX-987654",
+            "identifier_type": "tax_id"
+        }
+    ],
+    "lists_to_monitor": ["ofac", "un", "eu"],
+    "check_frequency": "weekly",
+    "status": "active"
+}
+
+response = requests.post(url, json=payload, headers=headers)
+print(response.json())
+
+# Watchlist with alerts
+payload = {
+    "name": "Executive Monitoring",
+    "check_frequency": "daily",
+    "lists_to_monitor": ["ofac", "un"],
+    "alert_config": {
+        "on_new_match": True,
+        "on_status_change": True,
+        "webhook_url": "https://your-server.com/webhooks/kyc",
+        "notification_email": "compliance@example.com"
+    }
+}
+
+response = requests.post(url, json=payload, headers=headers)
+print(response.json())
+```
+
+### JavaScript
+
+```javascript
+const url = 'https://stg.kyc.legaltalent.ai/kyc/watchlists';
+
+// Simple watchlist
+const simplePayload = {
+  name: 'High Risk Customers',
+  check_frequency: 'daily',
+  lists_to_monitor: ['ofac', 'un']
+};
+
+fetch(url, {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_TOKEN',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(simplePayload)
+})
+  .then(response => response.json())
+  .then(data => console.log(data));
+
+// Watchlist with subjects
+const payloadWithSubjects = {
+  name: 'Vendor Monitoring',
+  subjects: [
+    {
+      full_name: 'John Doe',
+      identifier: '12345678',
+      identifier_type: 'document'
+    },
+    {
+      full_name: 'Acme Corporation',
+      identifier: 'TAX-987654',
+      identifier_type: 'tax_id'
+    }
+  ],
+  lists_to_monitor: ['ofac', 'un', 'eu'],
+  check_frequency: 'weekly',
+  status: 'active'
+};
+
+fetch(url, {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_TOKEN',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(payloadWithSubjects)
+})
+  .then(response => response.json())
+  .then(data => console.log(data));
+
+// Watchlist with alerts
+const payloadWithAlerts = {
+  name: 'Executive Monitoring',
+  check_frequency: 'daily',
+  lists_to_monitor: ['ofac', 'un'],
+  alert_config: {
+    on_new_match: true,
+    on_status_change: true,
+    webhook_url: 'https://your-server.com/webhooks/kyc',
+    notification_email: 'compliance@example.com'
+  }
+};
+
+fetch(url, {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_TOKEN',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(payloadWithAlerts)
+})
+  .then(response => response.json())
+  .then(data => console.log(data));
+```
+
+## Response
+
+### Success Response (201 Created)
+
+```json
+{
+  "status": "success",
+  "data": {
+    "watchlist_id": "550e8400-e29b-41d4-a716-446655440000",
+    "tenant_id": "tenant123",
+    "name": "High Risk Customers",
+    "subjects": [
+      {
+        "subject_id": "660e8400-e29b-41d4-a716-446655440001",
+        "full_name": "John Doe",
+        "identifier": "12345678",
+        "identifier_type": "document",
+        "added_at": "2024-11-22T10:30:00Z"
+      }
+    ],
+    "lists_to_monitor": ["ofac", "un"],
+    "check_frequency": "daily",
+    "last_checked_at": null,
+    "next_check_due": 1732278600000,
+    "last_results": null,
+    "alert_config": {
+      "on_new_match": true,
+      "on_status_change": true,
+      "webhook_url": "https://your-server.com/webhooks/kyc",
+      "notification_email": "compliance@example.com"
+    },
+    "status": "active",
+    "created_at": "2024-11-22T10:30:00Z",
+    "updated_at": "2024-11-22T10:30:00Z"
+  }
+}
+```
+
+## Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `watchlist_id` | string | Unique identifier for the watchlist |
+| `tenant_id` | string | Your tenant identifier |
+| `name` | string | Watchlist name |
+| `subjects` | array | List of subjects being monitored |
+| `lists_to_monitor` | array | Lists to check against |
+| `check_frequency` | string | Screening frequency |
+| `last_checked_at` | string/null | Last check timestamp (ISO 8601) |
+| `next_check_due` | number/null | Next check timestamp (Unix milliseconds) |
+| `last_results` | object/null | Most recent screening results |
+| `alert_config` | object | Alert configuration |
+| `status` | string | Watchlist status (`active` or `paused`) |
+| `created_at` | string | Creation timestamp (ISO 8601) |
+| `updated_at` | string | Last update timestamp (ISO 8601) |
+
+## Error Responses
+
+### 400 Bad Request
+
+```json
+{
+  "status": "error",
+  "error": {
+    "type": "ValidationError",
+    "message": "Watchlist name is required",
+    "code": "VALIDATION_ERROR"
+  }
+}
+```
+
+Common validation errors:
+- Missing or empty `name` field
+- Invalid `check_frequency` value
+- Invalid `lists_to_monitor` values
+- Invalid subject data
+
+### 403 Forbidden
+
+```json
+{
+  "message": "User is not authorized to perform this action"
+}
+```
+
+Your token lacks the `watchlist:create` permission.
+
+## Subject Fields
+
+When adding subjects during creation:
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `full_name` | string | Yes* | Full name of the subject |
+| `identifier` | string | No | Document ID, wallet address, email, etc. |
+| `identifier_type` | string | No | Type: "document", "wallet", "email", "tax_id", etc. |
+
+*Required if no identifier is provided
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Start Empty, Add Later">
+    You can create a watchlist without subjects and add them later using the [Add Subjects](/api-reference/watchlists/add-subjects) endpoint. This is useful when setting up infrastructure before onboarding subjects.
+  </Accordion>
+  
+  <Accordion title="Choose the Right Frequency">
+    - **Daily**: High-risk entities, regulatory requirements, active monitoring
+    - **Weekly**: Standard monitoring, cost optimization
+    - **On Update**: Static lists, manual control, lowest cost
+  </Accordion>
+  
+  <Accordion title="Configure Alerts from Start">
+    Set up webhooks and email notifications when creating the watchlist to ensure you don't miss critical alerts during the first screening cycle.
+  </Accordion>
+  
+  <Accordion title="Select Relevant Lists">
+    Only monitor lists relevant to your jurisdiction and risk profile:
+    - US entities: Include `ofac`
+    - International: Include `un` and `eu`
+    - Uruguay PEPs: Include `senaclaft_uy`
+  </Accordion>
+</AccordionGroup>
+
+## Status Codes
+
+| Code | Description |
+|------|-------------|
+| 201 | Created - Watchlist created successfully |
+| 400 | Bad Request - Invalid parameters |
+| 401 | Unauthorized - Missing or invalid token |
+| 403 | Forbidden - Insufficient permissions |
+| 500 | Internal Server Error |
+
+## Next Steps
+
+After creating a watchlist:
+
+1. [Add subjects](/api-reference/watchlists/add-subjects) to begin monitoring
+2. [Get watchlist details](/api-reference/watchlists/get) to verify configuration
+3. Set up webhook endpoint to receive alerts
+4. Monitor screening activity with the [Usage API](/api-reference/usage)
+

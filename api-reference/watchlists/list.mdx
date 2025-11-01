@@ -1,0 +1,72 @@
+---
+title: 'List Watchlists'
+api: 'GET /kyc/watchlists'
+description: 'Retrieve all watchlists for your tenant'
+---
+
+## Endpoint
+
+```
+GET /kyc/watchlists
+```
+
+## Authentication
+
+Requires `watchlist:list` permission.
+
+## Request Example
+
+```bash
+curl -X GET https://stg.kyc.legaltalent.ai/kyc/watchlists \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+## Response
+
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "watchlist_id": "550e8400-e29b-41d4-a716-446655440000",
+      "name": "High Risk Customers",
+      "status": "active",
+      "subjects_count": 5,
+      "last_checked_at": "2024-11-22T09:00:00Z",
+      "next_check_due": 1732278600000,
+      "check_frequency": "daily"
+    },
+    {
+      "watchlist_id": "660e8400-e29b-41d4-a716-446655440002",
+      "name": "Vendor Watchlist",
+      "status": "paused",
+      "subjects_count": 12,
+      "last_checked_at": null,
+      "next_check_due": null,
+      "check_frequency": "weekly"
+    }
+  ]
+}
+```
+
+## Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `watchlist_id` | string | Unique identifier |
+| `name` | string | Watchlist name |
+| `status` | string | `active` or `paused` |
+| `subjects_count` | integer | Number of subjects in watchlist |
+| `last_checked_at` | string/null | Last screening timestamp (ISO 8601) |
+| `next_check_due` | number/null | Next check timestamp (Unix milliseconds) |
+| `check_frequency` | string | Screening frequency |
+
+## Status Codes
+
+| Code | Description |
+|------|-------------|
+| 200 | Success |
+| 401 | Unauthorized |
+| 403 | Forbidden - Missing `watchlist:list` permission |
+| 500 | Internal Server Error |
+

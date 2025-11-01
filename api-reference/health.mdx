@@ -17,19 +17,17 @@ No authentication required. This endpoint is publicly accessible for monitoring 
 
 ## Description
 
-This endpoint performs a basic liveness check without verifying external dependencies. It responds quickly (< 100ms) and is suitable for:
-- Load balancer health checks
-- Service monitoring
-- Deployment verification
+This endpoint performs a basic liveness check. It's suitable for:
+- Service availability monitoring
+- Integration health verification
 - Uptime monitoring
-
-**Note**: This endpoint does not check database connectivity or external services. For deep health checks including dependencies, use the readiness endpoint (internal use only).
+- Deployment verification
 
 ## Request Example
 
 <RequestExample>
-```bash
-curl https://dev.kyc.legaltalent.ai/health
+```bash Request
+  curl https://stg.kyc.legaltalent.ai/health
 ```
 </RequestExample>
 
@@ -38,7 +36,7 @@ curl https://dev.kyc.legaltalent.ai/health
 ### Success Response
 
 <ResponseExample>
-```json
+```json Success Response
 {
   "status": "ok",
   "service": "kyc-health",
@@ -93,7 +91,7 @@ Use this endpoint with monitoring tools:
 ```bash
 # Example monitoring script
 while true; do
-  response=$(curl -s -o /dev/null -w "%{http_code}" https://dev.kyc.legaltalent.ai/health)
+  response=$(curl -s -o /dev/null -w "%{http_code}" https://stg.kyc.legaltalent.ai/health)
   if [ "$response" != "200" ]; then
     echo "Health check failed: HTTP $response"
     # Send alert
@@ -104,18 +102,15 @@ done
 
 ### Deployment Verification
 
-After deploying, verify the service is up:
+After integration, verify the service is accessible:
 
 ```bash
-curl -f https://dev.kyc.legaltalent.ai/health || echo "Deployment verification failed"
+curl -f https://stg.kyc.legaltalent.ai/health || echo "Service unavailable"
 ```
 
 ## Implementation Notes
 
-- **No Dependencies**: This endpoint does not check S3, DynamoDB, or other external services
-- **Fast Response**: Typically responds in < 100ms
 - **No Caching**: Each request performs a fresh check
 - **Public Access**: No authentication required (by design for monitoring)
-
-If you need to verify external dependencies are working, contact support for access to internal readiness endpoints.
+- **Always Available**: Returns 200 OK when the service is operational
 

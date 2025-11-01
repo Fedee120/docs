@@ -1,33 +1,207 @@
 ---
-title: 'Introduction'
-description: 'Example section for showcasing API endpoints'
+title: 'API Overview'
+description: 'Complete guide to the KYC API - environments, authentication, and rate limits'
 ---
-
-<Note>
-  If you're not looking to build API reference documentation, you can delete
-  this section by removing the api-reference folder.
-</Note>
 
 ## Welcome
 
-There are two ways to build API documentation: [OpenAPI](https://mintlify.com/docs/api-playground/openapi/setup) and [MDX components](https://mintlify.com/docs/api-playground/mdx/configuration). For the starter kit, we are using the following OpenAPI specification.
+The KYC API provides comprehensive compliance screening for sanctions lists, PEPs (Politically Exposed Persons), and adverse media. Built for financial institutions, fintech companies, and any business requiring KYC/AML compliance.
 
-<Card
-  title="Plant Store Endpoints"
-  icon="leaf"
-  href="https://github.com/mintlify/starter/blob/main/api-reference/openapi.json"
->
-  View the OpenAPI specification file
-</Card>
+## Environments
+
+The API is available in two client-accessible environments:
+
+<CardGroup cols={2}>
+  <Card title="Staging" icon="flask">
+    **Base URL**: `https://stg.kyc.legaltalent.ai`
+    
+    - Testing and integration development
+    - Same features as production
+    - Safe environment for experimentation
+  </Card>
+  <Card title="Production" icon="rocket">
+    **Base URL**: `https://kyc.legaltalent.ai`
+    
+    - Live operations
+    - Production-grade SLAs
+    - Full monitoring and alerting
+  </Card>
+</CardGroup>
+
+<Warning>
+  Always use **Staging** for development and testing. Only use **Production** URLs with production credentials for live operations.
+</Warning>
+
+## Base URLs
+
+| Environment | API Base URL |
+|------------|--------------|
+| **Staging** | `https://stg.kyc.legaltalent.ai` |
+| **Production** | `https://kyc.legaltalent.ai` |
+
+## Rate Limiting
+
+The API is protected by AWS WAF (Web Application Firewall) with intelligent rate limiting to ensure service availability and prevent abuse.
+
+### Rate Limits
+
+<Info>
+  **Current Limit**: 1,000 requests per 5 minutes per IP address
+</Info>
+
+Rate limits apply per source IP address and are enforced at both Staging and Production environments.
+
+#### Rate Limit Details
+
+| Metric | Value |
+|--------|-------|
+| **Requests per window** | 1,000 |
+| **Time window** | 5 minutes (300 seconds) |
+| **Enforcement** | Per IP address |
+| **Response when exceeded** | `429 Too Many Requests` |
+
+#### Rate Limit Headers
+
+Responses include rate limit information in headers:
+
+```http
+X-RateLimit-Limit: 1000
+X-RateLimit-Remaining: 847
+X-RateLimit-Reset: 1732278600
+```
+
+#### Rate Limit Response
+
+When you exceed the rate limit, you'll receive:
+
+```json
+{
+  "error": "Rate limit exceeded",
+  "message": "Too many requests. Please try again in 3 minutes.",
+  "retry_after": 180
+}
+```
+
+**HTTP Status**: `429 Too Many Requests`
+
+### Best Practices for Rate Limits
+
+<AccordionGroup>
+  <Accordion title="Implement Exponential Backoff">
+    When you receive a `429` response, implement exponential backoff:
+    
+    ```python
+    import time
+    
+    def make_request_with_backoff(url, max_retries=3):
+        for attempt in range(max_retries):
+            response = requests.post(url, ...)
+            if response.status_code != 429:
+                return response
+            
+            # Exponential backoff: 2^attempt seconds
+            wait_time = 2 ** attempt
+            time.sleep(wait_time)
+        
+        raise Exception("Rate limit exceeded after retries")
+    ```
+  </Accordion>
+  
+  <Accordion title="Batch Requests Efficiently">
+    Use multi-list checks instead of multiple single-list requests:
+    
+    **❌ Inefficient** (3 requests):
+    ```bash
+    POST /kyc { "list_name": "ofac" }
+    POST /kyc { "list_name": "un" }
+    POST /kyc { "list_name": "eu" }
+    ```
+    
+    **✅ Efficient** (1 request):
+    ```bash
+    POST /kyc { "lists": ["ofac", "un", "eu"] }
+    ```
+  </Accordion>
+  
+  <Accordion title="Monitor Usage Metrics">
+    Track your usage with the Usage API to stay within limits:
+    
+    ```bash
+    GET /kyc/usage?granularity=hour
+    ```
+    
+    Set up alerts when approaching 80% of your rate limit.
+  </Accordion>
+  
+  <Accordion title="Distribute Load">
+    For high-volume integrations:
+    - Spread requests evenly over time
+    - Avoid burst patterns at start of 5-minute windows
+    - Plan your integration to stay within rate limits
+  </Accordion>
+</AccordionGroup>
+
+### Need Higher Limits?
+
+If your use case requires higher rate limits, contact your account manager to discuss enterprise plans with:
+- Custom rate limits
+- Dedicated infrastructure
+- SLA guarantees
+- Priority support
+
+## WAF Protection
+
+In addition to rate limiting, the API is protected by AWS WAF with:
+
+<CardGroup cols={2}>
+  <Card title="OWASP Top 10 Protection" icon="shield-check">
+    Protection against common web attacks including SQL injection, XSS, and remote code execution.
+  </Card>
+  <Card title="DDoS Mitigation" icon="shield-halved">
+    Automatic detection and blocking of distributed denial-of-service attacks.
+  </Card>
+  <Card title="Geo-Filtering" icon="globe">
+    Optional geographic restrictions for enhanced security.
+  </Card>
+  <Card title="Bot Protection" icon="robot">
+    Intelligent filtering of automated traffic and malicious bots.
+  </Card>
+</CardGroup>
 
 ## Authentication
 
-All API endpoints are authenticated using Bearer tokens and picked up from the specification file.
+All API requests require authentication using Bearer tokens. See the [Authentication guide](/api-reference/auth) for details on:
 
-```json
-"security": [
-  {
-    "bearerAuth": []
-  }
-]
-```
+- JWT tokens for user applications
+- API keys for server-to-server integrations
+- Permission model and RBAC
+- Token management best practices
+
+## API Features
+
+<CardGroup cols={2}>
+  <Card title="List Screening" icon="list-check" href="/api-reference/list-check">
+    Real-time checks against OFAC, UN, EU, and SENACLAFT watchlists.
+  </Card>
+  <Card title="Adverse Media" icon="newspaper" href="/api-reference/adverse-media">
+    AI-powered adverse media screening with risk scoring.
+  </Card>
+  <Card title="Watchlists" icon="radar" href="/api-reference/watchlists">
+    Automated ongoing monitoring with configurable alerts.
+  </Card>
+  <Card title="Export & Reporting" icon="file-export" href="/api-reference/export">
+    PDF report generation for compliance documentation.
+  </Card>
+  <Card title="Usage Tracking" icon="chart-line" href="/api-reference/usage">
+    Detailed usage metrics and analytics.
+  </Card>
+  <Card title="Health Check" icon="heart-pulse" href="/api-reference/health">
+    Service health and availability monitoring.
+  </Card>
+</CardGroup>
+
+## Support
+
+- **Documentation Issues**: Contact your account manager
+- **Technical Support**: Available during business hours
+- **Emergency Support**: Available for production incidents

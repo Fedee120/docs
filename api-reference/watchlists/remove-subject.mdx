@@ -1,0 +1,136 @@
+---
+title: 'Remove Subject'
+api: 'DELETE /kyc/watchlists/{watchlist_id}/subjects/{subject_id}'
+description: 'Remove a subject from a watchlist'
+---
+
+## Endpoint
+
+```
+DELETE /kyc/watchlists/{watchlist_id}/subjects/{subject_id}
+```
+
+## Authentication
+
+Requires `watchlist:update` permission.
+
+## Path Parameters
+
+<ParamField path="watchlist_id" type="string" required>
+  The unique identifier of the watchlist
+</ParamField>
+
+<ParamField path="subject_id" type="string" required>
+  The unique identifier of the subject to remove
+</ParamField>
+
+## Request Example
+
+```bash
+curl -X DELETE https://stg.kyc.legaltalent.ai/kyc/watchlists/550e8400-e29b-41d4-a716-446655440000/subjects/660e8400-e29b-41d4-a716-446655440001 \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+## Response
+
+```json
+{
+  "status": "success",
+  "message": "Subject removed from watchlist successfully"
+}
+```
+
+## Error Responses
+
+### 404 Not Found - Watchlist
+
+```json
+{
+  "status": "error",
+  "error": {
+    "type": "NotFoundError",
+    "message": "Watchlist not found",
+    "code": "WATCHLIST_NOT_FOUND"
+  }
+}
+```
+
+### 404 Not Found - Subject
+
+```json
+{
+  "status": "error",
+  "error": {
+    "type": "NotFoundError",
+    "message": "Subject not found in watchlist",
+    "code": "SUBJECT_NOT_FOUND"
+  }
+}
+```
+
+## Status Codes
+
+| Code | Description |
+|------|-------------|
+| 200 | Success - Subject removed |
+| 401 | Unauthorized |
+| 403 | Forbidden - Missing `watchlist:update` permission |
+| 404 | Not Found - Watchlist or subject not found |
+| 500 | Internal Server Error |
+
+## Important Notes
+
+<Info>
+  **What Happens After Removal**
+  
+  When a subject is removed from a watchlist:
+  - The subject is immediately excluded from future checks
+  - Historical screening data for this subject is preserved
+  - No alerts will be sent for this subject
+  - The subject can be re-added later if needed
+</Info>
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Get Subject ID First">
+    To remove a subject, you need their `subject_id`. Get it from the [Get Watchlist](/api-reference/watchlists/get) endpoint which returns all subjects with their IDs.
+  </Accordion>
+  
+  <Accordion title="Preserve Audit Trail">
+    Before removing subjects, export watchlist data for compliance and audit purposes using the [Get Watchlist](/api-reference/watchlists/get) endpoint.
+  </Accordion>
+  
+  <Accordion title="Batch Operations">
+    Currently, subjects must be removed one at a time. If you need to remove many subjects, consider [deleting](/api-reference/watchlists/delete) and recreating the watchlist or pausing it.
+  </Accordion>
+</AccordionGroup>
+
+## Example Workflow
+
+Get subject IDs, then remove:
+
+```bash
+# Step 1: Get watchlist details to find subject_id
+curl -X GET https://stg.kyc.legaltalent.ai/kyc/watchlists/550e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# Response includes subjects array with subject_id values
+# {
+#   "subjects": [
+#     {"subject_id": "660e8400-...", "full_name": "John Doe"},
+#     {"subject_id": "770e8400-...", "full_name": "Jane Smith"}
+#   ]
+# }
+
+# Step 2: Remove specific subject
+curl -X DELETE https://stg.kyc.legaltalent.ai/kyc/watchlists/550e8400-e29b-41d4-a716-446655440000/subjects/660e8400-e29b-41d4-a716-446655440001 \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+## Next Steps
+
+- [Add new subjects](/api-reference/watchlists/add-subjects) to replace removed ones
+- [Get watchlist details](/api-reference/watchlists/get) to verify removal
+- [Update watchlist](/api-reference/watchlists/update) configuration if needed
+

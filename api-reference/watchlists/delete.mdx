@@ -1,0 +1,89 @@
+---
+title: 'Delete Watchlist'
+api: 'DELETE /kyc/watchlists/{watchlist_id}'
+description: 'Remove a watchlist and all associated data'
+---
+
+## Endpoint
+
+```
+DELETE /kyc/watchlists/{watchlist_id}
+```
+
+## Authentication
+
+Requires `watchlist:delete` permission.
+
+## Path Parameters
+
+<ParamField path="watchlist_id" type="string" required>
+  The unique identifier of the watchlist to delete
+</ParamField>
+
+## Request Example
+
+```bash
+curl -X DELETE https://stg.kyc.legaltalent.ai/kyc/watchlists/550e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+## Response
+
+```json
+{
+  "status": "success",
+  "message": "Watchlist deleted successfully"
+}
+```
+
+## Error Responses
+
+### 404 Not Found
+
+```json
+{
+  "status": "error",
+  "error": {
+    "type": "NotFoundError",
+    "message": "Watchlist not found",
+    "code": "WATCHLIST_NOT_FOUND"
+  }
+}
+```
+
+## Important Notes
+
+<Warning>
+  **This action is permanent and cannot be undone.**
+  
+  Deleting a watchlist will:
+  - Remove the watchlist configuration
+  - Delete all subjects from the watchlist
+  - Cancel scheduled checks
+  - Remove historical screening data
+  - Stop all alerts and notifications
+</Warning>
+
+<Info>
+  **Alternative: Pause Instead of Delete**
+  
+  If you want to temporarily stop monitoring without losing data, consider [updating the status](/api-reference/watchlists/update) to `paused` instead of deleting.
+</Info>
+
+## Status Codes
+
+| Code | Description |
+|------|-------------|
+| 200 | Success - Watchlist deleted |
+| 401 | Unauthorized |
+| 403 | Forbidden - Missing `watchlist:delete` permission |
+| 404 | Not Found |
+| 500 | Internal Server Error |
+
+## Best Practices
+
+- **Export data first**: Use the [Get Watchlist](/api-reference/watchlists/get) endpoint to retrieve and save watchlist data before deletion
+- **Pause instead**: For temporary suspension, use `status: "paused"` to preserve data
+- **Verify ID**: Double-check the `watchlist_id` to avoid accidental deletion
+- **Log deletions**: Maintain audit logs of watchlist deletions for compliance
+

@@ -1,97 +1,82 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "KYC API Documentation"
+description: "Complete API documentation for KYC compliance and watchlist screening"
 ---
 
-## Setting up
+## Welcome to KYC API
 
-Get your documentation site up and running in minutes.
+Comprehensive compliance screening API for sanctions lists, PEPs (Politically Exposed Persons), and adverse media checks. Protect your business from financial crime with real-time watchlist validation.
 
 <Card
-  title="Start here"
+  title="Quickstart Guide"
   icon="rocket"
   href="/quickstart"
   horizontal
 >
-  Follow our three step quickstart guide.
+  Get started with your first KYC check in minutes.
 </Card>
 
-## Make it yours
+## Core Features
 
-Design a docs site that looks great and empowers your users.
+Powerful compliance tools to meet your regulatory requirements.
 
-<Columns cols={2}>
+<CardGroup cols={2}>
   <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
+    title="List Screening"
+    icon="list-check"
+    href="/api-reference/list-check"
   >
-    Edit your docs locally and preview them in real time.
-  </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
-  </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+    Check entities against OFAC, UN, EU, and SENACLAFT watchlists in real-time.
   </Card>
   <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
+    title="Adverse Media Analysis"
+    icon="newspaper"
+    href="/api-reference/adverse-media"
   >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
-
-## Create beautiful pages
-
-Everything you need to create world-class documentation.
-
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
+    AI-powered adverse media screening to identify negative news and risk factors.
   </Card>
   <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
+    title="Ongoing Monitoring"
+    icon="radar"
+    href="/api-reference/watchlists"
   >
-    Add sample code to demonstrate how to use your product.
+    Automated watchlist monitoring with configurable alerts and webhooks.
   </Card>
   <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
+    title="Export & Reporting"
+    icon="file-pdf"
+    href="/api-reference/export"
   >
-    Display images and other media.
+    Generate PDF reports and export results for compliance documentation.
+  </Card>
+</CardGroup>
+
+## Available Watchlists
+
+Access to major global sanctions and PEP lists:
+
+| List | Coverage | Entity Types |
+|------|----------|--------------|
+| **OFAC** | US Treasury sanctions | Persons, Organizations |
+| **UN** | UN Security Council sanctions | Persons, Organizations |
+| **EU** | EU consolidated financial sanctions | Persons, Organizations |
+| **SENACLAFT UY** | Uruguay PEPs | Persons |
+
+## Quick Links
+
+<CardGroup cols={2}>
+  <Card
+    title="Authentication"
+    icon="key"
+    href="/api-reference/auth"
+  >
+    Learn how to authenticate API requests with JWT tokens or API keys.
   </Card>
   <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
+    title="Usage Metrics"
+    icon="chart-line"
+    href="/api-reference/usage"
   >
-    Write once and reuse across your docs.
+    Monitor your API usage and track compliance activity.
   </Card>
-</Columns>
-
-## Need inspiration?
-
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+</CardGroup>

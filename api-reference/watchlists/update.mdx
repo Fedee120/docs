@@ -1,0 +1,126 @@
+---
+title: 'Update Watchlist'
+api: 'PATCH /kyc/watchlists/{watchlist_id}'
+description: 'Modify watchlist configuration'
+---
+
+## Endpoint
+
+```
+PATCH /kyc/watchlists/{watchlist_id}
+```
+
+## Authentication
+
+Requires `watchlist:update` permission.
+
+## Path Parameters
+
+<ParamField path="watchlist_id" type="string" required>
+  The unique identifier of the watchlist
+</ParamField>
+
+## Request Body
+
+All parameters are optional. Only include fields you want to update.
+
+<ParamField name="name" type="string">
+  New watchlist name
+</ParamField>
+
+<ParamField name="lists_to_monitor" type="array">
+  Update lists to check against
+</ParamField>
+
+<ParamField name="check_frequency" type="string">
+  Change screening frequency: `daily`, `weekly`, or `on_update`
+</ParamField>
+
+<ParamField name="alert_config" type="object">
+  Update alert configuration
+</ParamField>
+
+<ParamField name="status" type="string">
+  Change status: `active` or `paused`
+</ParamField>
+
+## Request Example
+
+```bash
+curl -X PATCH https://stg.kyc.legaltalent.ai/kyc/watchlists/550e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "check_frequency": "weekly"
+  }'
+```
+
+## Additional Request Examples
+
+### Pause Watchlist
+
+```bash
+curl -X PATCH https://stg.kyc.legaltalent.ai/kyc/watchlists/550e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "paused"
+  }'
+```
+
+### Update Multiple Settings
+
+```bash
+curl -X PATCH https://stg.kyc.legaltalent.ai/kyc/watchlists/550e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Updated Watchlist Name",
+    "check_frequency": "weekly",
+    "status": "active",
+    "lists_to_monitor": ["ofac", "un", "eu"]
+  }'
+```
+
+## Response
+
+```json
+{
+  "status": "success",
+  "data": {
+    "watchlist_id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "Updated Watchlist Name",
+    "check_frequency": "weekly",
+    "status": "active",
+    "lists_to_monitor": ["ofac", "un", "eu"],
+    "updated_at": "2024-11-22T11:00:00Z"
+  }
+}
+```
+
+## Error Responses
+
+### 404 Not Found
+
+```json
+{
+  "status": "error",
+  "error": {
+    "type": "NotFoundError",
+    "message": "Watchlist not found",
+    "code": "WATCHLIST_NOT_FOUND"
+  }
+}
+```
+
+## Status Codes
+
+| Code | Description |
+|------|-------------|
+| 200 | Success |
+| 400 | Bad Request - Invalid parameters |
+| 401 | Unauthorized |
+| 403 | Forbidden - Missing `watchlist:update` permission |
+| 404 | Not Found |
+| 500 | Internal Server Error |
+

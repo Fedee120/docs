@@ -1,0 +1,210 @@
+---
+title: 'Watchlists Overview'
+description: 'Automated ongoing monitoring of entities against KYC watchlists'
+---
+
+## What are Watchlists?
+
+Watchlists provide continuous monitoring of entities (persons or organizations) against sanctions lists, enabling automated compliance screening over time. Instead of performing one-time checks, watchlists automatically re-screen subjects at configured intervals and alert you when matches are found or status changes occur.
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Automated Screening" icon="robot">
+    Schedule automatic checks daily, weekly, or on-demand to ensure continuous compliance.
+  </Card>
+  <Card title="Real-time Alerts" icon="bell">
+    Receive notifications via webhooks and email when new matches are detected.
+  </Card>
+  <Card title="Multi-List Monitoring" icon="layer-group">
+    Monitor against multiple watchlists (OFAC, UN, EU, SENACLAFT) simultaneously.
+  </Card>
+  <Card title="Batch Management" icon="users">
+    Add multiple subjects at once for efficient bulk screening operations.
+  </Card>
+</CardGroup>
+
+## Common Use Cases
+
+### 1. Customer Onboarding
+Create a watchlist for new customers during onboarding. Continue monitoring throughout the customer lifecycle.
+
+### 2. Vendor Due Diligence
+Monitor vendors and suppliers continuously to detect sanction changes that could impact your business.
+
+### 3. Employee Screening
+Maintain watchlists for employees in sensitive positions with automated periodic rescreening.
+
+### 4. Ongoing Compliance
+Meet regulatory requirements for continuous monitoring of high-risk individuals and entities.
+
+## How It Works
+
+<Steps>
+  <Step title="Create Watchlist">
+    Create a watchlist and configure monitoring parameters (check frequency, alert settings, lists to monitor).
+  </Step>
+  <Step title="Add Subjects">
+    Add one or more subjects (persons/organizations) to the watchlist with identifying information.
+  </Step>
+  <Step title="Automatic Screening">
+    The system automatically screens all subjects at the configured frequency (daily, weekly, etc.).
+  </Step>
+  <Step title="Receive Alerts">
+    Get notified via webhook or email when matches are found or statuses change.
+  </Step>
+  <Step title="Review Results">
+    Access detailed screening results and historical data for compliance reporting.
+  </Step>
+</Steps>
+
+## Check Frequencies
+
+| Frequency | Description | Best For |
+|-----------|-------------|----------|
+| **Daily** | Screen all subjects once per day | High-risk entities, regulatory requirements |
+| **Weekly** | Screen all subjects once per week | Standard monitoring, lower-risk entities |
+| **On Update** | Only screen when subjects are added/modified | Static lists, manual control |
+
+## Alert Configuration
+
+Configure how you want to be notified when events occur:
+
+```json
+{
+  "alert_config": {
+    "on_new_match": true,
+    "on_status_change": true,
+    "webhook_url": "https://your-server.com/webhooks/kyc",
+    "notification_email": "compliance@example.com"
+  }
+}
+```
+
+### Alert Types
+
+- **New Match**: Triggered when a subject matches a watchlist for the first time
+- **Status Change**: Triggered when a subject's match status changes (e.g., added to sanctions list)
+
+## Available Operations
+
+<CardGroup cols={2}>
+  <Card title="Create Watchlist" icon="plus" href="/api-reference/watchlists/create">
+    Create a new watchlist with initial configuration
+  </Card>
+  <Card title="List Watchlists" icon="list" href="/api-reference/watchlists/list">
+    Retrieve all watchlists for your tenant
+  </Card>
+  <Card title="Get Details" icon="magnifying-glass" href="/api-reference/watchlists/get">
+    Get detailed information about a specific watchlist
+  </Card>
+  <Card title="Update Configuration" icon="pen" href="/api-reference/watchlists/update">
+    Modify watchlist settings and configuration
+  </Card>
+  <Card title="Delete Watchlist" icon="trash" href="/api-reference/watchlists/delete">
+    Remove a watchlist and all associated data
+  </Card>
+  <Card title="Add Subjects" icon="user-plus" href="/api-reference/watchlists/add-subjects">
+    Add subjects individually or in batch
+  </Card>
+  <Card title="Remove Subject" icon="user-minus" href="/api-reference/watchlists/remove-subject">
+    Remove a subject from a watchlist
+  </Card>
+</CardGroup>
+
+## Permissions Required
+
+| Operation | Permission |
+|-----------|-----------|
+| Create watchlist | `watchlist:create` |
+| List watchlists | `watchlist:list` |
+| Get watchlist details | `watchlist:read` |
+| Update watchlist | `watchlist:update` |
+| Delete watchlist | `watchlist:delete` |
+| Add/remove subjects | `watchlist:update` |
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Choose Appropriate Frequency">
+    - Use **daily** checks for high-risk entities or regulatory requirements
+    - Use **weekly** checks for standard monitoring to reduce costs
+    - Use **on_update** for static lists where changes are rare
+  </Accordion>
+  
+  <Accordion title="Configure Alerts Properly">
+    - Set up webhook endpoints that can handle POST requests
+    - Implement retry logic for webhook failures
+    - Monitor email notifications to avoid missing critical alerts
+    - Test webhooks before going to production
+  </Accordion>
+  
+  <Accordion title="Organize by Risk Level">
+    Create separate watchlists for different risk categories:
+    - High-risk customers (daily monitoring)
+    - Standard customers (weekly monitoring)
+    - Vendors (weekly monitoring)
+    - Employees (monthly or on-update)
+  </Accordion>
+  
+  <Accordion title="Use Batch Operations">
+    When adding multiple subjects, use batch endpoints to:
+    - Reduce API calls and stay within rate limits
+    - Improve performance
+    - Simplify error handling
+  </Accordion>
+  
+  <Accordion title="Monitor Usage">
+    Track your watchlist activity with the Usage API to:
+    - Understand screening volumes
+    - Optimize check frequencies
+    - Manage costs
+    - Plan capacity
+  </Accordion>
+</AccordionGroup>
+
+## Webhook Payload
+
+When alerts are triggered, your webhook endpoint receives a POST request:
+
+```json
+{
+  "event_type": "watchlist.match.found",
+  "watchlist_id": "550e8400-e29b-41d4-a716-446655440000",
+  "watchlist_name": "High Risk Customers",
+  "subject": {
+    "subject_id": "660e8400-e29b-41d4-a716-446655440001",
+    "full_name": "John Doe",
+    "identifier": "12345678"
+  },
+  "matches": [
+    {
+      "list_name": "ofac",
+      "entity_id": "12345",
+      "confidence_score": 0.95,
+      "programs": ["SDGT"]
+    }
+  ],
+  "checked_at": "2024-11-22T09:00:00Z"
+}
+```
+
+## Pricing Considerations
+
+Watchlist monitoring costs are based on:
+- Number of watchlists (no limit)
+- Number of subjects per watchlist
+- Check frequency (daily checks = 30× monthly volume)
+- Number of lists monitored per subject
+
+Use the [Usage API](/api-reference/usage) to track your consumption and optimize costs.
+
+## Next Steps
+
+Get started with watchlists:
+
+1. [Create your first watchlist](/api-reference/watchlists/create)
+2. [Add subjects for monitoring](/api-reference/watchlists/add-subjects)
+3. Configure webhooks to receive alerts
+4. Monitor results with the [Usage API](/api-reference/usage)
+
