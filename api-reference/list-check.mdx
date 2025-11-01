@@ -149,22 +149,20 @@ When using the `identifiers` field, provide an array of objects:
 
 ## Request Example
 
-<RequestExample>
-```bash Request
-  curl -X POST https://stg.kyc.legaltalent.ai/kyc \
-    -H "Authorization: Bearer YOUR_TOKEN" \
-    -H "Content-Type: application/json" \
-    -d '{
-      "subject": {
-        "full_name": "John Doe",
-        "nationality": "US",
-        "birth_date": "1985-03-15"
-      },
-      "list_name": "ofac",
-      "search_type": "composite"
-    }'
+```bash
+curl -X POST https://stg.kyc.legaltalent.ai/kyc \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "subject": {
+      "full_name": "John Doe",
+      "nationality": "US",
+      "birth_date": "1985-03-15"
+    },
+    "list_name": "ofac",
+    "search_type": "composite"
+  }'
 ```
-</RequestExample>
 
 ## Additional Request Examples
 
@@ -243,8 +241,7 @@ curl -X POST https://stg.kyc.legaltalent.ai/kyc \
 
 ### Success Response (Single List)
 
-<ResponseExample>
-```json Success Response
+```json
 {
   "status": "success",
   "result": {
@@ -274,12 +271,10 @@ curl -X POST https://stg.kyc.legaltalent.ai/kyc \
   }
 }
 ```
-</ResponseExample>
 
 ### Success Response (Multiple Lists)
 
-<ResponseExample>
-```json Multiple Lists Response
+```json
 {
   "status": "success",
   "request_type": "synchronous",
@@ -315,12 +310,10 @@ curl -X POST https://stg.kyc.legaltalent.ai/kyc \
   }
 }
 ```
-</ResponseExample>
 
 ### No Match Response
 
-<ResponseExample>
-```json No Match Response
+```json
 {
   "status": "success",
   "result": {
@@ -337,14 +330,12 @@ curl -X POST https://stg.kyc.legaltalent.ai/kyc \
   }
 }
 ```
-</ResponseExample>
 
 ## Error Responses
 
 ### 400 Bad Request - Missing Subject
 
-<ResponseExample>
-```json Error: Missing Subject
+```json
 {
   "status": "error",
   "error": {
@@ -354,12 +345,10 @@ curl -X POST https://stg.kyc.legaltalent.ai/kyc \
   }
 }
 ```
-</ResponseExample>
 
 ### 400 Bad Request - Invalid List
 
-<ResponseExample>
-```json Error: Invalid List
+```json
 {
   "status": "error",
   "error": {
@@ -369,17 +358,14 @@ curl -X POST https://stg.kyc.legaltalent.ai/kyc \
   }
 }
 ```
-</ResponseExample>
 
 ### 403 Forbidden - Missing Permission
 
-<ResponseExample>
-```json Error: Missing Permission
+```json
 {
   "message": "User is not authorized to perform this action"
 }
 ```
-</ResponseExample>
 
 ## Status Codes
 
