@@ -1,0 +1,573 @@
+---
+title: 'Validate Cryptocurrency Wallets'
+description: 'Learn how to check cryptocurrency wallet addresses against sanctions lists'
+---
+
+## Overview
+
+Cryptocurrency wallet addresses can be checked against sanctions lists to ensure compliance and prevent transactions with blocked entities. This guide shows you how to validate wallet addresses using the KYC API.
+
+## Quick Example
+
+You can check wallets using either `wallet_address` (simpler) or the `identifiers` array (more flexible):
+
+<CodeGroup>
+
+```python
+import requests
+
+url = "https://stg.kyc.legaltalent.ai/kyc"
+headers = {
+    "Authorization": "Bearer YOUR_TOKEN",
+    "Content-Type": "application/json"
+}
+
+# Method 1: Using wallet_address (recommended for single wallet)
+payload = {
+    "subject": {
+        "wallet_address": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
+    },
+    "list_name": "ofac"
+}
+
+response = requests.post(url, json=payload, headers=headers)
+data = response.json()
+
+if data.get("result", {}).get("is_match"):
+    print("Wallet found in sanctions list!")
+    print(f"Matches: {data['result']['match_count']}")
+else:
+    print("Wallet is clear")
+
+# Method 2: Using identifiers array (useful for multiple identifiers)
+payload = {
+    "subject": {
+        "identifiers": [
+            {
+                "type": "Ethereum Wallet",
+                "value": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
+            }
+        ]
+    },
+    "list_name": "ofac"
+}
+
+response = requests.post(url, json=payload, headers=headers)
+data = response.json()
+```
+
+```javascript
+const url = 'https://stg.kyc.legaltalent.ai/kyc';
+
+// Method 1: Using wallet_address (recommended for single wallet)
+const payload = {
+  subject: {
+    wallet_address: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb'
+  },
+  list_name: 'ofac'
+};
+
+fetch(url, {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_TOKEN',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(payload)
+})
+  .then(response => response.json())
+  .then(data => {
+    if (data.result?.is_match) {
+      console.log('Wallet found in sanctions list!');
+      console.log(`Matches: ${data.result.match_count}`);
+    } else {
+      console.log('Wallet is clear');
+    }
+  });
+
+// Method 2: Using identifiers array (useful for multiple identifiers)
+const payloadWithIdentifiers = {
+  subject: {
+    identifiers: [
+      {
+        type: 'Ethereum Wallet',
+        value: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb'
+      }
+    ]
+  },
+  list_name: 'ofac'
+};
+
+fetch(url, {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_TOKEN',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(payloadWithIdentifiers)
+})
+  .then(response => response.json())
+  .then(data => console.log(data));
+```
+
+</CodeGroup>
+
+<Info>
+  **Note on wallet format:**
+  
+  - **For `/kyc` endpoint**: Use `wallet_address` directly (simpler) or `identifiers` array (if you need multiple identifiers)
+  - **For watchlists**: Always use `identifier` with `identifier_type: "wallet"` (see watchlist examples below)
+</Info>
+
+## Available Lists for Crypto Wallets
+
+The API supports validation against specialized lists for cryptocurrency wallets:
+
+| List Name | Description | Focus Area |
+|-----------|-------------|------------|
+| `ofac` | OFAC Sanctions List | US Treasury sanctions, includes crypto addresses |
+| `nbctf` | NBCTF (Israel Counter Terror Financing) | Israel's list of wallets linked to terrorism financing |
+| `crypto_scam` | Crypto Scam List | Known scam wallets and fraudulent addresses |
+| `un` | UN Security Council Sanctions | International sanctions, includes crypto entities |
+| `eu` | EU Consolidated Financial Sanctions | European Union sanctions list |
+
+## Supported Wallet Types
+
+The API supports validation of various cryptocurrency wallet addresses:
+
+| Wallet Type | Example | Notes |
+|-------------|---------|-------|
+| Ethereum | `0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb` | EVM-compatible chains (ETH, BSC, Polygon, etc.) |
+| Bitcoin | `1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa` | Legacy and Segwit addresses |
+| Tron | Various formats | TRX addresses |
+| Other Crypto | Various formats | Support depends on list data |
+
+## Common Use Cases
+
+### 1. Validate Before Transaction
+
+Check wallets before allowing deposits or withdrawals:
+
+<CodeGroup>
+
+```python
+def validate_wallet_before_transaction(wallet_address, token):
+    """Validate wallet before processing transaction"""
+    url = "https://stg.kyc.legaltalent.ai/kyc"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    }
+    
+    # Check against crypto-specific lists
+    payload = {
+        "subject": {
+            "wallet_address": wallet_address
+        },
+        "lists": ["ofac", "nbctf", "crypto_scam"]
+    }
+    
+    response = requests.post(url, json=payload, headers=headers)
+    data = response.json()
+    
+    if data.get("summary", {}).get("has_any_match"):
+        raise ValueError("Wallet is blocked - transaction rejected")
+    
+    return True
+
+# Usage
+try:
+    validate_wallet_before_transaction(
+        "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+        "YOUR_TOKEN"
+    )
+    print("Transaction approved")
+except ValueError as e:
+    print(f"Transaction blocked: {e}")
+```
+
+```javascript
+async function validateWalletBeforeTransaction(walletAddress, token) {
+  const url = 'https://stg.kyc.legaltalent.ai/kyc';
+  
+  // Check against crypto-specific lists
+  const payload = {
+    subject: {
+      wallet_address: walletAddress
+    },
+    lists: ['ofac', 'nbctf', 'crypto_scam']
+  };
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+  
+  const data = await response.json();
+  
+  if (data.summary?.has_any_match) {
+    throw new Error('Wallet is blocked - transaction rejected');
+  }
+  
+  return true;
+}
+
+// Usage
+validateWalletBeforeTransaction(
+  '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
+  'YOUR_TOKEN'
+)
+  .then(() => console.log('Transaction approved'))
+  .catch(error => console.log(`Transaction blocked: ${error.message}`));
+```
+
+</CodeGroup>
+
+### 2. Batch Validation
+
+Validate multiple wallets efficiently:
+
+<CodeGroup>
+
+```python
+def validate_wallet_batch(wallet_addresses, token):
+    """Validate multiple wallets"""
+    url = "https://stg.kyc.legaltalent.ai/kyc"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    }
+    
+    results = {}
+    
+    for wallet in wallet_addresses:
+        payload = {
+            "subject": {
+                "wallet_address": wallet
+            },
+            "list_name": "nbctf"  # Check against Israel's crypto list
+        }
+        
+        response = requests.post(url, json=payload, headers=headers)
+        data = response.json()
+        
+        results[wallet] = {
+            "is_match": data.get("result", {}).get("is_match", False),
+            "match_count": data.get("result", {}).get("match_count", 0)
+        }
+    
+    return results
+
+# Usage
+wallets = [
+    "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+    "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",
+    "0x8ba1f109551bD432803012645Hac136c23C09E116"
+]
+
+results = validate_wallet_batch(wallets, "YOUR_TOKEN")
+for wallet, result in results.items():
+    status = "BLOCKED" if result["is_match"] else "CLEAR"
+    print(f"{wallet[:20]}... : {status}")
+```
+
+```javascript
+async function validateWalletBatch(walletAddresses, token) {
+  const url = 'https://stg.kyc.legaltalent.ai/kyc';
+  
+  const results = {};
+  
+  for (const wallet of walletAddresses) {
+    const payload = {
+      subject: {
+        wallet_address: wallet
+      },
+      list_name: 'nbctf'  // Check against Israel's crypto list
+    };
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+    
+    const data = await response.json();
+    
+    results[wallet] = {
+      is_match: data.result?.is_match || false,
+      match_count: data.result?.match_count || 0
+    };
+  }
+  
+  return results;
+}
+
+// Usage
+const wallets = [
+  '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
+  '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
+  '0x8ba1f109551bD432803012645Hac136c23C09E116'
+];
+
+validateWalletBatch(wallets, 'YOUR_TOKEN')
+  .then(results => {
+    for (const [wallet, result] of Object.entries(results)) {
+      const status = result.is_match ? 'BLOCKED' : 'CLEAR';
+      console.log(`${wallet.substring(0, 20)}... : ${status}`);
+    }
+  });
+```
+
+</CodeGroup>
+
+### 3. Monitor Wallets in Watchlists
+
+Add wallets to watchlists for ongoing monitoring:
+
+<CodeGroup>
+
+```python
+import requests
+
+# Create a watchlist for crypto wallets
+watchlist_url = "https://stg.kyc.legaltalent.ai/kyc/watchlists"
+headers = {
+    "Authorization": "Bearer YOUR_TOKEN",
+    "Content-Type": "application/json"
+}
+
+# Create watchlist monitoring crypto-specific lists
+watchlist_payload = {
+    "name": "Monitored Crypto Wallets",
+    "check_frequency": "daily",
+    "lists_to_monitor": ["ofac", "nbctf", "crypto_scam"],
+    "status": "active"
+}
+
+response = requests.post(watchlist_url, json=watchlist_payload, headers=headers)
+watchlist_data = response.json()
+watchlist_id = watchlist_data["data"]["watchlist_id"]
+
+# Add wallets to watchlist
+add_subjects_url = f"{watchlist_url}/{watchlist_id}/subjects/batch"
+subjects_payload = {
+    "subjects": [
+        {
+            "full_name": "Ethereum Wallet 1",
+            "identifier": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+            "identifier_type": "wallet"
+        },
+        {
+            "full_name": "Bitcoin Wallet 1",
+            "identifier": "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",
+            "identifier_type": "wallet"
+        }
+    ]
+}
+
+response = requests.post(add_subjects_url, json=subjects_payload, headers=headers)
+print(f"Watchlist created: {watchlist_id}")
+print("Wallets added for daily monitoring")
+```
+
+```javascript
+const watchlistUrl = 'https://stg.kyc.legaltalent.ai/kyc/watchlists';
+const headers = {
+  'Authorization': 'Bearer YOUR_TOKEN',
+  'Content-Type': 'application/json'
+};
+
+// Create watchlist monitoring crypto-specific lists
+const watchlistPayload = {
+  name: 'Monitored Crypto Wallets',
+  check_frequency: 'daily',
+  lists_to_monitor: ['ofac', 'nbctf', 'crypto_scam'],
+  status: 'active'
+};
+
+fetch(watchlistUrl, {
+  method: 'POST',
+  headers: headers,
+  body: JSON.stringify(watchlistPayload)
+})
+  .then(response => response.json())
+  .then(watchlistData => {
+    const watchlistId = watchlistData.data.watchlist_id;
+    
+    // Add wallets to watchlist
+    const addSubjectsUrl = `${watchlistUrl}/${watchlistId}/subjects/batch`;
+    const subjectsPayload = {
+      subjects: [
+        {
+          full_name: 'Ethereum Wallet 1',
+          identifier: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
+          identifier_type: 'wallet'
+        },
+        {
+          full_name: 'Bitcoin Wallet 1',
+          identifier: '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
+          identifier_type: 'wallet'
+        }
+      ]
+    };
+    
+    return fetch(addSubjectsUrl, {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(subjectsPayload)
+    });
+  })
+  .then(() => {
+    console.log('Watchlist created and wallets added for daily monitoring');
+  });
+```
+
+</CodeGroup>
+
+## Error Handling
+
+Always implement proper error handling for production use:
+
+<CodeGroup>
+
+```python
+import requests
+
+def validate_wallet_safe(wallet_address, token):
+    """Validate wallet with comprehensive error handling"""
+    url = "https://stg.kyc.legaltalent.ai/kyc"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    }
+    
+    payload = {
+        "subject": {
+            "wallet_address": wallet_address
+        },
+        "list_name": "crypto_scam"  # Check against crypto scam list
+    }
+    
+    try:
+        response = requests.post(url, json=payload, headers=headers, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        
+        if response.status_code == 200:
+            return {
+                "success": True,
+                "is_match": data.get("result", {}).get("is_match", False),
+                "match_count": data.get("result", {}).get("match_count", 0)
+            }
+        else:
+            return {
+                "success": False,
+                "error": f"API returned status {response.status_code}"
+            }
+            
+    except requests.exceptions.Timeout:
+        return {"success": False, "error": "Request timeout"}
+    except requests.exceptions.ConnectionError:
+        return {"success": False, "error": "Connection error"}
+    except requests.exceptions.HTTPError as e:
+        return {"success": False, "error": f"HTTP error: {e}"}
+    except Exception as e:
+        return {"success": False, "error": f"Unexpected error: {e}"}
+
+# Usage
+result = validate_wallet_safe("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb", "YOUR_TOKEN")
+if result["success"]:
+    print(f"Match found: {result['is_match']}")
+else:
+    print(f"Error: {result['error']}")
+```
+
+```javascript
+async function validateWalletSafe(walletAddress, token) {
+  const url = 'https://stg.kyc.legaltalent.ai/kyc';
+  
+  const payload = {
+    subject: {
+      wallet_address: walletAddress
+    },
+    list_name: 'crypto_scam'  // Check against crypto scam list
+  };
+  
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(10000)  // 10 second timeout
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API returned status ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    return {
+      success: true,
+      is_match: data.result?.is_match || false,
+      match_count: data.result?.match_count || 0
+    };
+    
+  } catch (error) {
+    if (error.name === 'TimeoutError') {
+      return { success: false, error: 'Request timeout' };
+    } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      return { success: false, error: 'Connection error' };
+    } else {
+      return { success: false, error: error.message };
+    }
+  }
+}
+
+// Usage
+validateWalletSafe('0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb', 'YOUR_TOKEN')
+  .then(result => {
+    if (result.success) {
+      console.log(`Match found: ${result.is_match}`);
+    } else {
+      console.log(`Error: ${result.error}`);
+    }
+  });
+```
+
+</CodeGroup>
+
+## Best Practices
+
+1. **Validate Before Critical Operations**: Always check wallets before processing high-value transactions
+2. **Use Crypto-Specific Lists**: Check against specialized lists like `nbctf` (Israel crypto list), `crypto_scam` (scam wallets), and `ofac` (US sanctions)
+3. **Check Multiple Lists**: Use `lists` parameter to check against multiple lists simultaneously for comprehensive coverage
+4. **Monitor Continuously**: Use [watchlists](/api-reference/watchlists/overview) for ongoing monitoring of wallets
+5. **Handle Errors Gracefully**: Implement retry logic and proper error handling for production systems
+6. **Respect Rate Limits**: The API has rate limits (1,000 requests per 5 minutes per IP). See [API Overview](/api-reference/introduction) for details
+
+## Related References
+
+- [List Check API](/api-reference/list-check) - Complete API reference for checking entities
+- [Watchlists Overview](/api-reference/watchlists/overview) - Learn about ongoing monitoring
+- [Create Watchlist](/api-reference/watchlists/create) - Set up automated monitoring
+- [API Authentication](/api-reference/auth) - Get your API credentials
+- [API Overview](/api-reference/introduction) - Rate limits and environment details
+
+## Next Steps
+
+1. [Get your API credentials](/quickstart) if you haven't already
+2. Try the quick example above with your own wallet addresses
+3. Set up a [watchlist](/api-reference/watchlists/create) for automated monitoring
+4. Implement validation in your transaction processing pipeline
+

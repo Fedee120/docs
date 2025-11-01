@@ -1,0 +1,876 @@
+---
+title: 'Adverse Media Code Examples'
+description: 'Code snippets for performing adverse media checks and analyzing results'
+---
+
+## Overview
+
+Adverse media checks use AI-powered analysis to search for negative news, criminal records, sanctions, and other risk factors about entities. This guide provides ready-to-use code snippets for integrating adverse media checks into your application.
+
+<CodeGroup>
+
+```python
+import requests
+
+BASE_URL = "https://stg.kyc.legaltalent.ai"
+headers = {
+    "Authorization": "Bearer YOUR_TOKEN",
+    "Content-Type": "application/json"
+}
+```
+
+```javascript
+const BASE_URL = 'https://stg.kyc.legaltalent.ai';
+
+const headers = {
+  'Authorization': 'Bearer YOUR_TOKEN',
+  'Content-Type': 'application/json'
+};
+```
+
+</CodeGroup>
+
+## Basic Adverse Media Check
+
+<CodeGroup>
+
+```python
+# Simple adverse media check
+def check_adverse_media(name, country=None, age=None, additional_info=None):
+    url = f"{BASE_URL}/kyc/adverse-media"
+    payload = {"name": name}
+    
+    if country:
+        payload["country"] = country
+    if age:
+        payload["age"] = age
+    if additional_info:
+        payload["additional_info"] = additional_info
+    
+    response = requests.post(url, json=payload, headers=headers, timeout=30)
+    response.raise_for_status()
+    return response.json()
+
+# Usage
+result = check_adverse_media("John Doe")
+print(f"Risk Score: {result['final_risk_score']}")
+print(f"Decision: {result['decision']}")
+print(f"Summary: {result['executive_summary']}")
+```
+
+```javascript
+// Simple adverse media check
+async function checkAdverseMedia(name, country, age, additionalInfo) {
+  const url = `${BASE_URL}/kyc/adverse-media`;
+  const payload = { name };
+  
+  if (country) payload.country = country;
+  if (age) payload.age = age;
+  if (additionalInfo) payload.additional_info = additionalInfo;
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(30000)
+  });
+  
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  
+  return response.json();
+}
+
+// Usage
+const result = await checkAdverseMedia('John Doe');
+console.log(`Risk Score: ${result.final_risk_score}`);
+console.log(`Decision: ${result.decision}`);
+console.log(`Summary: ${result.executive_summary}`);
+```
+
+</CodeGroup>
+
+## Check with Context
+
+<CodeGroup>
+
+```python
+# Check with additional context for better accuracy
+def check_adverse_media_detailed(name, country, age, position=None, company=None):
+    url = f"{BASE_URL}/kyc/adverse-media"
+    payload = {
+        "name": name,
+        "country": country,
+        "age": age
+    }
+    
+    if position and company:
+        payload["additional_info"] = f"{position} of {company}"
+    elif company:
+        payload["additional_info"] = f"Works at {company}"
+    
+    response = requests.post(url, json=payload, headers=headers, timeout=30)
+    response.raise_for_status()
+    return response.json()
+
+# Usage
+result = check_adverse_media_detailed(
+    "John Doe",
+    country="US",
+    age=45,
+    position="CEO",
+    company="Tech Corp"
+)
+
+# Process results
+if result['decision'] == 'HIGH_RISK':
+    print("HIGH RISK - Manual review required")
+    for source in result['adverse_sources']:
+        print(f"- {source['title']}: {source['url']}")
+```
+
+```javascript
+// Check with additional context for better accuracy
+async function checkAdverseMediaDetailed(name, country, age, position, company) {
+  const url = `${BASE_URL}/kyc/adverse-media`;
+  const payload = {
+    name,
+    country,
+    age
+  };
+  
+  if (position && company) {
+    payload.additional_info = `${position} of ${company}`;
+  } else if (company) {
+    payload.additional_info = `Works at ${company}`;
+  }
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(30000)
+  });
+  
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  
+  return response.json();
+}
+
+// Usage
+const result = await checkAdverseMediaDetailed(
+  'John Doe',
+  'US',
+  45,
+  'CEO',
+  'Tech Corp'
+);
+
+// Process results
+if (result.decision === 'HIGH_RISK') {
+  console.log('HIGH RISK - Manual review required');
+  result.adverse_sources.forEach(source => {
+    console.log(`- ${source.title}: ${source.url}`);
+  });
+}
+```
+
+</CodeGroup>
+
+## Using Different LLM Providers
+
+<CodeGroup>
+
+```python
+# Check using OpenAI provider
+def check_adverse_media_openai(name, country=None, model="gpt-4.1-mini"):
+    url = f"{BASE_URL}/kyc/adverse-media"
+    payload = {
+        "name": name,
+        "provider": "openai",
+        "model": model
+    }
+    
+    if country:
+        payload["country"] = country
+    
+    response = requests.post(url, json=payload, headers=headers, timeout=30)
+    response.raise_for_status()
+    return response.json()
+
+# Usage with OpenAI
+result = check_adverse_media_openai("John Doe", country="US")
+
+# Default provider (Bedrock)
+def check_adverse_media_bedrock(name, country=None):
+    url = f"{BASE_URL}/kyc/adverse-media"
+    payload = {"name": name}
+    if country:
+        payload["country"] = country
+    # provider defaults to "bedrock"
+    
+    response = requests.post(url, json=payload, headers=headers, timeout=30)
+    response.raise_for_status()
+    return response.json()
+
+# Usage with Bedrock (default)
+result = check_adverse_media_bedrock("John Doe", country="US")
+```
+
+```javascript
+// Check using OpenAI provider
+async function checkAdverseMediaOpenAI(name, country, model = 'gpt-4.1-mini') {
+  const url = `${BASE_URL}/kyc/adverse-media`;
+  const payload = {
+    name,
+    provider: 'openai',
+    model
+  };
+  
+  if (country) payload.country = country;
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(30000)
+  });
+  
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  
+  return response.json();
+}
+
+// Usage with OpenAI
+const result = await checkAdverseMediaOpenAI('John Doe', 'US');
+
+// Default provider (Bedrock)
+async function checkAdverseMediaBedrock(name, country) {
+  const url = `${BASE_URL}/kyc/adverse-media`;
+  const payload = { name };
+  if (country) payload.country = country;
+  // provider defaults to "bedrock"
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(30000)
+  });
+  
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  
+  return response.json();
+}
+
+// Usage with Bedrock (default)
+const result = await checkAdverseMediaBedrock('John Doe', 'US');
+```
+
+</CodeGroup>
+
+## Analyzing Results
+
+<CodeGroup>
+
+```python
+# Comprehensive result analysis
+def analyze_adverse_media_result(result):
+    risk_score = result['final_risk_score']
+    decision = result['decision']
+    summary = result['executive_summary']
+    sources = result.get('adverse_sources', [])
+    
+    print(f"Risk Score: {risk_score}/100")
+    print(f"Decision: {decision}")
+    print(f"\nExecutive Summary:\n{summary}\n")
+    
+    if decision == 'CLEAR':
+        print("No adverse media found - entity is clear")
+    elif decision == 'LOW_RISK':
+        print("Low risk - minor findings, monitor if needed")
+    elif decision == 'MEDIUM_RISK':
+        print("Medium risk - review recommended")
+    elif decision == 'HIGH_RISK':
+        print("HIGH RISK - immediate review required")
+    
+    if sources:
+        print(f"\nFound {len(sources)} adverse source(s):")
+        for i, source in enumerate(sources, 1):
+            print(f"\n{i}. {source['title']}")
+            print(f"   URL: {source['url']}")
+            print(f"   Relevance: {source['relevance_score']:.2%}")
+            print(f"   Risk Factors: {', '.join(source['risk_factors'])}")
+            print(f"   Summary: {source['summary']}")
+    
+    # Metadata
+    metadata = result.get('search_metadata', {})
+    if metadata:
+        print(f"\nSearch Metadata:")
+        print(f"  Sources searched: {metadata.get('total_sources_searched', 0)}")
+        print(f"  Sources with findings: {metadata.get('sources_with_findings', 0)}")
+        print(f"  Processing time: {result.get('processing_time_ms', 0)}ms")
+    
+    return {
+        'risk_score': risk_score,
+        'decision': decision,
+        'source_count': len(sources),
+        'requires_review': decision in ['MEDIUM_RISK', 'HIGH_RISK']
+    }
+
+# Usage
+result = check_adverse_media("John Doe", country="US", age=45)
+analysis = analyze_adverse_media_result(result)
+
+if analysis['requires_review']:
+    print("\n⚠️ Manual compliance review required")
+```
+
+```javascript
+// Comprehensive result analysis
+function analyzeAdverseMediaResult(result) {
+  const riskScore = result.final_risk_score;
+  const decision = result.decision;
+  const summary = result.executive_summary;
+  const sources = result.adverse_sources || [];
+  
+  console.log(`Risk Score: ${riskScore}/100`);
+  console.log(`Decision: ${decision}`);
+  console.log(`\nExecutive Summary:\n${summary}\n`);
+  
+  if (decision === 'CLEAR') {
+    console.log('No adverse media found - entity is clear');
+  } else if (decision === 'LOW_RISK') {
+    console.log('Low risk - minor findings, monitor if needed');
+  } else if (decision === 'MEDIUM_RISK') {
+    console.log('Medium risk - review recommended');
+  } else if (decision === 'HIGH_RISK') {
+    console.log('HIGH RISK - immediate review required');
+  }
+  
+  if (sources.length > 0) {
+    console.log(`\nFound ${sources.length} adverse source(s):`);
+    sources.forEach((source, i) => {
+      console.log(`\n${i + 1}. ${source.title}`);
+      console.log(`   URL: ${source.url}`);
+      console.log(`   Relevance: ${(source.relevance_score * 100).toFixed(2)}%`);
+      console.log(`   Risk Factors: ${source.risk_factors.join(', ')}`);
+      console.log(`   Summary: ${source.summary}`);
+    });
+  }
+  
+  // Metadata
+  const metadata = result.search_metadata || {};
+  if (Object.keys(metadata).length > 0) {
+    console.log(`\nSearch Metadata:`);
+    console.log(`  Sources searched: ${metadata.total_sources_searched || 0}`);
+    console.log(`  Sources with findings: ${metadata.sources_with_findings || 0}`);
+    console.log(`  Processing time: ${result.processing_time_ms || 0}ms`);
+  }
+  
+  return {
+    riskScore,
+    decision,
+    sourceCount: sources.length,
+    requiresReview: ['MEDIUM_RISK', 'HIGH_RISK'].includes(decision)
+  };
+}
+
+// Usage
+const result = await checkAdverseMedia('John Doe', 'US', 45);
+const analysis = analyzeAdverseMediaResult(result);
+
+if (analysis.requiresReview) {
+  console.log('\n⚠️ Manual compliance review required');
+}
+```
+
+</CodeGroup>
+
+## Risk-Based Filtering
+
+<CodeGroup>
+
+```python
+# Filter results by risk level
+def filter_by_risk_level(result, min_risk_score=None, risk_decisions=None):
+    risk_score = result['final_risk_score']
+    decision = result['decision']
+    
+    if min_risk_score and risk_score < min_risk_score:
+        return False
+    
+    if risk_decisions and decision not in risk_decisions:
+        return False
+    
+    return True
+
+# Check multiple entities and filter
+def check_multiple_entities(entities, min_risk_score=41):
+    results = []
+    
+    for entity in entities:
+        try:
+            result = check_adverse_media(
+                entity['name'],
+                country=entity.get('country'),
+                age=entity.get('age'),
+                additional_info=entity.get('additional_info')
+            )
+            
+            if filter_by_risk_level(result, min_risk_score=min_risk_score):
+                results.append({
+                    'entity': entity['name'],
+                    'result': result
+                })
+        except Exception as e:
+            print(f"Error checking {entity['name']}: {e}")
+    
+    return results
+
+# Usage
+entities = [
+    {"name": "John Doe", "country": "US", "age": 45},
+    {"name": "Jane Smith", "country": "GB", "age": 30},
+    {"name": "Acme Corp", "country": "US"}
+]
+
+flagged_entities = check_multiple_entities(entities, min_risk_score=41)
+print(f"Found {len(flagged_entities)} entities requiring review")
+```
+
+```javascript
+// Filter results by risk level
+function filterByRiskLevel(result, minRiskScore, riskDecisions) {
+  const riskScore = result.final_risk_score;
+  const decision = result.decision;
+  
+  if (minRiskScore && riskScore < minRiskScore) {
+    return false;
+  }
+  
+  if (riskDecisions && !riskDecisions.includes(decision)) {
+    return false;
+  }
+  
+  return true;
+}
+
+// Check multiple entities and filter
+async function checkMultipleEntities(entities, minRiskScore = 41) {
+  const results = [];
+  
+  for (const entity of entities) {
+    try {
+      const result = await checkAdverseMedia(
+        entity.name,
+        entity.country,
+        entity.age,
+        entity.additional_info
+      );
+      
+      if (filterByRiskLevel(result, minRiskScore)) {
+        results.push({
+          entity: entity.name,
+          result
+        });
+      }
+    } catch (error) {
+      console.error(`Error checking ${entity.name}:`, error);
+    }
+  }
+  
+  return results;
+}
+
+// Usage
+const entities = [
+  { name: 'John Doe', country: 'US', age: 45 },
+  { name: 'Jane Smith', country: 'GB', age: 30 },
+  { name: 'Acme Corp', country: 'US' }
+];
+
+const flaggedEntities = await checkMultipleEntities(entities, 41);
+console.log(`Found ${flaggedEntities.length} entities requiring review`);
+```
+
+</CodeGroup>
+
+## Customer Onboarding Workflow
+
+<CodeGroup>
+
+```python
+# Complete onboarding check combining watchlist and adverse media
+def onboarding_check(name, country=None, age=None, document_id=None):
+    results = {
+        'watchlist_check': None,
+        'adverse_media_check': None,
+        'overall_decision': 'PENDING'
+    }
+    
+    # 1. Watchlist check
+    watchlist_url = f"{BASE_URL}/kyc"
+    watchlist_payload = {
+        "subject": {"full_name": name}
+    }
+    if country:
+        watchlist_payload["subject"]["nationality"] = country
+    if document_id:
+        watchlist_payload["subject"]["document_id"] = document_id
+    
+    watchlist_response = requests.post(
+        watchlist_url,
+        json=watchlist_payload,
+        headers=headers,
+        timeout=30
+    )
+    results['watchlist_check'] = watchlist_response.json()
+    
+    # 2. Adverse media check
+    adverse_media_payload = {"name": name}
+    if country:
+        adverse_media_payload["country"] = country
+    if age:
+        adverse_media_payload["age"] = age
+    
+    adverse_response = requests.post(
+        f"{BASE_URL}/kyc/adverse-media",
+        json=adverse_media_payload,
+        headers=headers,
+        timeout=30
+    )
+    results['adverse_media_check'] = adverse_response.json()
+    
+    # 3. Determine overall decision
+    watchlist_match = results['watchlist_check'].get('result', {}).get('is_match', False)
+    adverse_risk = results['adverse_media_check']['decision']
+    
+    if watchlist_match:
+        results['overall_decision'] = 'REJECTED'
+    elif adverse_risk == 'HIGH_RISK':
+        results['overall_decision'] = 'REVIEW_REQUIRED'
+    elif adverse_risk == 'MEDIUM_RISK':
+        results['overall_decision'] = 'MANUAL_REVIEW'
+    else:
+        results['overall_decision'] = 'APPROVED'
+    
+    return results
+
+# Usage
+onboarding_result = onboarding_check(
+    "John Doe",
+    country="US",
+    age=45,
+    document_id="P123456"
+)
+
+print(f"Onboarding Decision: {onboarding_result['overall_decision']}")
+if onboarding_result['overall_decision'] != 'APPROVED':
+    print("⚠️ Additional review required")
+```
+
+```javascript
+// Complete onboarding check combining watchlist and adverse media
+async function onboardingCheck(name, country, age, documentId) {
+  const results = {
+    watchlistCheck: null,
+    adverseMediaCheck: null,
+    overallDecision: 'PENDING'
+  };
+  
+  // 1. Watchlist check
+  const watchlistUrl = `${BASE_URL}/kyc`;
+  const watchlistPayload = {
+    subject: { full_name: name }
+  };
+  if (country) {
+    watchlistPayload.subject.nationality = country;
+  }
+  if (documentId) {
+    watchlistPayload.subject.document_id = documentId;
+  }
+  
+  const watchlistResponse = await fetch(watchlistUrl, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(watchlistPayload),
+    signal: AbortSignal.timeout(30000)
+  });
+  results.watchlistCheck = await watchlistResponse.json();
+  
+  // 2. Adverse media check
+  const adverseMediaPayload = { name };
+  if (country) adverseMediaPayload.country = country;
+  if (age) adverseMediaPayload.age = age;
+  
+  const adverseResponse = await fetch(`${BASE_URL}/kyc/adverse-media`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(adverseMediaPayload),
+    signal: AbortSignal.timeout(30000)
+  });
+  results.adverseMediaCheck = await adverseResponse.json();
+  
+  // 3. Determine overall decision
+  const watchlistMatch = results.watchlistCheck?.result?.is_match || false;
+  const adverseRisk = results.adverseMediaCheck.decision;
+  
+  if (watchlistMatch) {
+    results.overallDecision = 'REJECTED';
+  } else if (adverseRisk === 'HIGH_RISK') {
+    results.overallDecision = 'REVIEW_REQUIRED';
+  } else if (adverseRisk === 'MEDIUM_RISK') {
+    results.overallDecision = 'MANUAL_REVIEW';
+  } else {
+    results.overallDecision = 'APPROVED';
+  }
+  
+  return results;
+}
+
+// Usage
+const onboardingResult = await onboardingCheck(
+  'John Doe',
+  'US',
+  45,
+  'P123456'
+);
+
+console.log(`Onboarding Decision: ${onboardingResult.overallDecision}`);
+if (onboardingResult.overallDecision !== 'APPROVED') {
+  console.log('⚠️ Additional review required');
+}
+```
+
+</CodeGroup>
+
+## Error Handling and Retries
+
+<CodeGroup>
+
+```python
+import time
+from requests.exceptions import RequestException, Timeout
+
+def check_adverse_media_with_retry(name, country=None, max_retries=3, timeout=30):
+    url = f"{BASE_URL}/kyc/adverse-media"
+    payload = {"name": name}
+    if country:
+        payload["country"] = country
+    
+    for attempt in range(max_retries):
+        try:
+            response = requests.post(
+                url,
+                json=payload,
+                headers=headers,
+                timeout=timeout
+            )
+            response.raise_for_status()
+            return response.json()
+            
+        except Timeout:
+            if attempt < max_retries - 1:
+                wait_time = (attempt + 1) * 2  # Exponential backoff
+                print(f"Timeout on attempt {attempt + 1}, retrying in {wait_time}s...")
+                time.sleep(wait_time)
+            else:
+                raise Exception("Request timed out after all retries")
+        
+        except RequestException as e:
+            if attempt < max_retries - 1:
+                print(f"Request failed on attempt {attempt + 1}: {e}, retrying...")
+                time.sleep(2)
+            else:
+                raise
+    
+    return None
+
+# Usage with retry logic
+try:
+    result = check_adverse_media_with_retry("John Doe", country="US")
+    print(f"Risk Score: {result['final_risk_score']}")
+except Exception as e:
+    print(f"Failed to check adverse media: {e}")
+```
+
+```javascript
+// Check with retry logic
+async function checkAdverseMediaWithRetry(name, country, maxRetries = 3, timeout = 30000) {
+  const url = `${BASE_URL}/kyc/adverse-media`;
+  const payload = { name };
+  if (country) payload.country = country;
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      return await response.json();
+      
+    } catch (error) {
+      if (attempt < maxRetries - 1) {
+        const waitTime = (attempt + 1) * 2000; // Exponential backoff
+        console.log(`Attempt ${attempt + 1} failed, retrying in ${waitTime}ms...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+      } else {
+        throw new Error(`Request failed after ${maxRetries} attempts: ${error.message}`);
+      }
+    }
+  }
+}
+
+// Usage with retry logic
+try {
+  const result = await checkAdverseMediaWithRetry('John Doe', 'US');
+  console.log(`Risk Score: ${result.final_risk_score}`);
+} catch (error) {
+  console.error(`Failed to check adverse media: ${error.message}`);
+}
+```
+
+</CodeGroup>
+
+## Risk Score Thresholds
+
+<CodeGroup>
+
+```python
+# Risk-based decision making
+def get_risk_category(risk_score):
+    if risk_score <= 20:
+        return "CLEAR"
+    elif risk_score <= 40:
+        return "LOW_RISK"
+    elif risk_score <= 70:
+        return "MEDIUM_RISK"
+    else:
+        return "HIGH_RISK"
+
+def should_require_review(result, risk_threshold=41):
+    risk_score = result['final_risk_score']
+    decision = result['decision']
+    
+    if risk_score >= risk_threshold:
+        return True
+    
+    # Also review if there are any adverse sources
+    if len(result.get('adverse_sources', [])) > 0:
+        return True
+    
+    return False
+
+# Automated decision workflow
+def process_adverse_media_check(name, country=None, auto_approve_threshold=20):
+    result = check_adverse_media(name, country=country)
+    
+    risk_score = result['final_risk_score']
+    decision = result['decision']
+    
+    if risk_score <= auto_approve_threshold:
+        return {
+            'status': 'AUTO_APPROVED',
+            'risk_score': risk_score,
+            'reason': 'Risk score below threshold'
+        }
+    elif should_require_review(result):
+        return {
+            'status': 'REVIEW_REQUIRED',
+            'risk_score': risk_score,
+            'decision': decision,
+            'sources': result.get('adverse_sources', []),
+            'reason': f'Risk score {risk_score} exceeds threshold'
+        }
+    else:
+        return {
+            'status': 'MANUAL_REVIEW',
+            'risk_score': risk_score,
+            'reason': 'Standard review process'
+        }
+```
+
+```javascript
+// Risk-based decision making
+function getRiskCategory(riskScore) {
+  if (riskScore <= 20) return 'CLEAR';
+  if (riskScore <= 40) return 'LOW_RISK';
+  if (riskScore <= 70) return 'MEDIUM_RISK';
+  return 'HIGH_RISK';
+}
+
+function shouldRequireReview(result, riskThreshold = 41) {
+  const riskScore = result.final_risk_score;
+  
+  if (riskScore >= riskThreshold) {
+    return true;
+  }
+  
+  // Also review if there are any adverse sources
+  if ((result.adverse_sources || []).length > 0) {
+    return true;
+  }
+  
+  return false;
+}
+
+// Automated decision workflow
+async function processAdverseMediaCheck(name, country, autoApproveThreshold = 20) {
+  const result = await checkAdverseMedia(name, country);
+  
+  const riskScore = result.final_risk_score;
+  const decision = result.decision;
+  
+  if (riskScore <= autoApproveThreshold) {
+    return {
+      status: 'AUTO_APPROVED',
+      riskScore,
+      reason: 'Risk score below threshold'
+    };
+  } else if (shouldRequireReview(result)) {
+    return {
+      status: 'REVIEW_REQUIRED',
+      riskScore,
+      decision,
+      sources: result.adverse_sources || [],
+      reason: `Risk score ${riskScore} exceeds threshold`
+    };
+  } else {
+    return {
+      status: 'MANUAL_REVIEW',
+      riskScore,
+      reason: 'Standard review process'
+    };
+  }
+}
+```
+
+</CodeGroup>
+
+## Related References
+
+- [Adverse Media API Reference](/api-reference/adverse-media) - Complete API documentation
+- [List Check API](/api-reference/list-check) - Traditional watchlist checks
+- [Validate Person or Company](/validate-person-entity) - Entity validation guide
+- [Watchlists Guide](/watchlists-guide) - Continuous monitoring with watchlists
+

@@ -19,6 +19,16 @@
               "index",
               "quickstart"
             ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "authentication-guide",
+              "validate-person-entity",
+              "validate-crypto-wallets",
+              "watchlists-guide",
+              "adverse-media-guide"
+            ]
           }
         ]
       },

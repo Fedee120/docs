@@ -1,0 +1,951 @@
+---
+title: 'Watchlists Code Examples'
+description: 'Code snippets for managing watchlists and monitoring entities'
+---
+
+## Overview
+
+Watchlists enable continuous monitoring of entities against sanctions lists. This guide provides ready-to-use code snippets for common watchlist operations.
+
+<CodeGroup>
+
+```python
+import requests
+
+BASE_URL = "https://stg.kyc.legaltalent.ai"
+headers = {
+    "Authorization": "Bearer YOUR_TOKEN",
+    "Content-Type": "application/json"
+}
+```
+
+```javascript
+const BASE_URL = 'https://stg.kyc.legaltalent.ai';
+
+const headers = {
+  'Authorization': 'Bearer YOUR_TOKEN',
+  'Content-Type': 'application/json'
+};
+```
+
+</CodeGroup>
+
+## Create Watchlist
+
+<CodeGroup>
+
+```python
+# Create a basic watchlist
+def create_watchlist(name, lists_to_monitor=None, check_frequency="daily"):
+    url = f"{BASE_URL}/kyc/watchlists"
+    payload = {
+        "name": name,
+        "check_frequency": check_frequency
+    }
+    
+    if lists_to_monitor:
+        payload["lists_to_monitor"] = lists_to_monitor
+    
+    response = requests.post(url, json=payload, headers=headers)
+    return response.json()
+
+# Usage
+watchlist = create_watchlist("High Risk Customers", ["ofac", "un"])
+print(f"Created watchlist: {watchlist['data']['watchlist_id']}")
+
+# Create watchlist with initial subjects
+def create_watchlist_with_subjects(name, subjects, lists_to_monitor=None):
+    url = f"{BASE_URL}/kyc/watchlists"
+    payload = {
+        "name": name,
+        "subjects": subjects,
+        "check_frequency": "daily"
+    }
+    
+    if lists_to_monitor:
+        payload["lists_to_monitor"] = lists_to_monitor
+    
+    response = requests.post(url, json=payload, headers=headers)
+    return response.json()
+
+# Usage with subjects
+subjects = [
+    {
+        "full_name": "John Doe",
+        "identifier": "12345678",
+        "identifier_type": "document"
+    },
+    {
+        "full_name": "Acme Corporation",
+        "identifier": "TAX-987654",
+        "identifier_type": "tax_id"
+    }
+]
+
+watchlist = create_watchlist_with_subjects("Vendor Monitoring", subjects)
+```
+
+```javascript
+// Create a basic watchlist
+async function createWatchlist(name, listsToMonitor, checkFrequency = 'daily') {
+  const url = `${BASE_URL}/kyc/watchlists`;
+  const payload = {
+    name,
+    check_frequency: checkFrequency
+  };
+  
+  if (listsToMonitor) {
+    payload.lists_to_monitor = listsToMonitor;
+  }
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload)
+  });
+  
+  return response.json();
+}
+
+// Usage
+const watchlist = await createWatchlist('High Risk Customers', ['ofac', 'un']);
+console.log(`Created watchlist: ${watchlist.data.watchlist_id}`);
+
+// Create watchlist with initial subjects
+async function createWatchlistWithSubjects(name, subjects, listsToMonitor) {
+  const url = `${BASE_URL}/kyc/watchlists`;
+  const payload = {
+    name,
+    subjects,
+    check_frequency: 'daily'
+  };
+  
+  if (listsToMonitor) {
+    payload.lists_to_monitor = listsToMonitor;
+  }
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload)
+  });
+  
+  return response.json();
+}
+
+// Usage with subjects
+const subjects = [
+  {
+    full_name: 'John Doe',
+    identifier: '12345678',
+    identifier_type: 'document'
+  },
+  {
+    full_name: 'Acme Corporation',
+    identifier: 'TAX-987654',
+    identifier_type: 'tax_id'
+  }
+];
+
+const watchlist = await createWatchlistWithSubjects('Vendor Monitoring', subjects);
+```
+
+</CodeGroup>
+
+## Create Watchlist with Alerts
+
+<CodeGroup>
+
+```python
+# Create watchlist with alert configuration
+def create_watchlist_with_alerts(name, webhook_url=None, email=None):
+    url = f"{BASE_URL}/kyc/watchlists"
+    payload = {
+        "name": name,
+        "check_frequency": "daily",
+        "lists_to_monitor": ["ofac", "un", "eu"],
+        "alert_config": {
+            "on_new_match": True,
+            "on_status_change": True
+        }
+    }
+    
+    if webhook_url:
+        payload["alert_config"]["webhook_url"] = webhook_url
+    if email:
+        payload["alert_config"]["notification_email"] = email
+    
+    response = requests.post(url, json=payload, headers=headers)
+    return response.json()
+
+# Usage
+watchlist = create_watchlist_with_alerts(
+    "Executive Monitoring",
+    webhook_url="https://your-server.com/webhooks/kyc",
+    email="compliance@example.com"
+)
+```
+
+```javascript
+// Create watchlist with alert configuration
+async function createWatchlistWithAlerts(name, webhookUrl, email) {
+  const url = `${BASE_URL}/kyc/watchlists`;
+  const payload = {
+    name,
+    check_frequency: 'daily',
+    lists_to_monitor: ['ofac', 'un', 'eu'],
+    alert_config: {
+      on_new_match: true,
+      on_status_change: true
+    }
+  };
+  
+  if (webhookUrl) {
+    payload.alert_config.webhook_url = webhookUrl;
+  }
+  if (email) {
+    payload.alert_config.notification_email = email;
+  }
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload)
+  });
+  
+  return response.json();
+}
+
+// Usage
+const watchlist = await createWatchlistWithAlerts(
+  'Executive Monitoring',
+  'https://your-server.com/webhooks/kyc',
+  'compliance@example.com'
+);
+```
+
+</CodeGroup>
+
+## List All Watchlists
+
+<CodeGroup>
+
+```python
+# List all watchlists
+def list_watchlists(limit=10, offset=0):
+    url = f"{BASE_URL}/kyc/watchlists"
+    params = {
+        "limit": limit,
+        "offset": offset
+    }
+    
+    response = requests.get(url, headers=headers, params=params)
+    return response.json()
+
+# Usage
+watchlists = list_watchlists(limit=20)
+for wl in watchlists.get("data", []):
+    print(f"{wl['name']} - {wl['watchlist_id']}")
+
+# Get all watchlists (paginated)
+def get_all_watchlists():
+    all_watchlists = []
+    offset = 0
+    limit = 50
+    
+    while True:
+        result = list_watchlists(limit=limit, offset=offset)
+        data = result.get("data", [])
+        if not data:
+            break
+        
+        all_watchlists.extend(data)
+        offset += limit
+    
+    return all_watchlists
+```
+
+```javascript
+// List all watchlists
+async function listWatchlists(limit = 10, offset = 0) {
+  const url = `${BASE_URL}/kyc/watchlists?limit=${limit}&offset=${offset}`;
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers
+  });
+  
+  return response.json();
+}
+
+// Usage
+const watchlists = await listWatchlists(20);
+watchlists.data.forEach(wl => {
+  console.log(`${wl.name} - ${wl.watchlist_id}`);
+});
+
+// Get all watchlists (paginated)
+async function getAllWatchlists() {
+  const allWatchlists = [];
+  let offset = 0;
+  const limit = 50;
+  
+  while (true) {
+    const result = await listWatchlists(limit, offset);
+    const data = result.data || [];
+    
+    if (data.length === 0) break;
+    
+    allWatchlists.push(...data);
+    offset += limit;
+  }
+  
+  return allWatchlists;
+}
+```
+
+</CodeGroup>
+
+## Get Watchlist Details
+
+<CodeGroup>
+
+```python
+# Get watchlist details
+def get_watchlist(watchlist_id):
+    url = f"{BASE_URL}/kyc/watchlists/{watchlist_id}"
+    response = requests.get(url, headers=headers)
+    return response.json()
+
+# Usage
+watchlist = get_watchlist("550e8400-e29b-41d4-a716-446655440000")
+print(f"Name: {watchlist['data']['name']}")
+print(f"Subjects: {len(watchlist['data']['subjects'])}")
+print(f"Last checked: {watchlist['data'].get('last_checked_at')}")
+```
+
+```javascript
+// Get watchlist details
+async function getWatchlist(watchlistId) {
+  const url = `${BASE_URL}/kyc/watchlists/${watchlistId}`;
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers
+  });
+  
+  return response.json();
+}
+
+// Usage
+const watchlist = await getWatchlist('550e8400-e29b-41d4-a716-446655440000');
+console.log(`Name: ${watchlist.data.name}`);
+console.log(`Subjects: ${watchlist.data.subjects.length}`);
+console.log(`Last checked: ${watchlist.data.last_checked_at}`);
+```
+
+</CodeGroup>
+
+## Add Subjects
+
+<CodeGroup>
+
+```python
+# Add single subject
+def add_subject(watchlist_id, full_name, identifier=None, identifier_type=None):
+    url = f"{BASE_URL}/kyc/watchlists/{watchlist_id}/subjects"
+    payload = {"full_name": full_name}
+    
+    if identifier:
+        payload["identifier"] = identifier
+    if identifier_type:
+        payload["identifier_type"] = identifier_type
+    
+    response = requests.post(url, json=payload, headers=headers)
+    return response.json()
+
+# Usage
+result = add_subject(
+    "550e8400-e29b-41d4-a716-446655440000",
+    "Jane Smith",
+    identifier="98765432",
+    identifier_type="document"
+)
+
+# Add multiple subjects (batch)
+def add_subjects_batch(watchlist_id, subjects):
+    url = f"{BASE_URL}/kyc/watchlists/{watchlist_id}/subjects/batch"
+    payload = {"subjects": subjects}
+    
+    response = requests.post(url, json=payload, headers=headers)
+    return response.json()
+
+# Usage
+subjects = [
+    {
+        "full_name": "John Doe",
+        "identifier": "12345678",
+        "identifier_type": "document"
+    },
+    {
+        "full_name": "Acme Corporation",
+        "identifier": "TAX-987654",
+        "identifier_type": "tax_id"
+    },
+    {
+        "full_name": "Crypto Wallet Owner",
+        "identifier": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+        "identifier_type": "wallet"
+    }
+]
+
+result = add_subjects_batch("550e8400-e29b-41d4-a716-446655440000", subjects)
+```
+
+```javascript
+// Add single subject
+async function addSubject(watchlistId, fullName, identifier, identifierType) {
+  const url = `${BASE_URL}/kyc/watchlists/${watchlistId}/subjects`;
+  const payload = { full_name: fullName };
+  
+  if (identifier) {
+    payload.identifier = identifier;
+  }
+  if (identifierType) {
+    payload.identifier_type = identifierType;
+  }
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload)
+  });
+  
+  return response.json();
+}
+
+// Usage
+const result = await addSubject(
+  '550e8400-e29b-41d4-a716-446655440000',
+  'Jane Smith',
+  '98765432',
+  'document'
+);
+
+// Add multiple subjects (batch)
+async function addSubjectsBatch(watchlistId, subjects) {
+  const url = `${BASE_URL}/kyc/watchlists/${watchlistId}/subjects/batch`;
+  const payload = { subjects };
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload)
+  });
+  
+  return response.json();
+}
+
+// Usage
+const subjects = [
+  {
+    full_name: 'John Doe',
+    identifier: '12345678',
+    identifier_type: 'document'
+  },
+  {
+    full_name: 'Acme Corporation',
+    identifier: 'TAX-987654',
+    identifier_type: 'tax_id'
+  },
+  {
+    full_name: 'Crypto Wallet Owner',
+    identifier: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
+    identifier_type: 'wallet'
+  }
+];
+
+const result = await addSubjectsBatch('550e8400-e29b-41d4-a716-446655440000', subjects);
+```
+
+</CodeGroup>
+
+## Remove Subject
+
+<CodeGroup>
+
+```python
+# Remove subject from watchlist
+def remove_subject(watchlist_id, subject_id):
+    url = f"{BASE_URL}/kyc/watchlists/{watchlist_id}/subjects/{subject_id}"
+    response = requests.delete(url, headers=headers)
+    return response.json()
+
+# Usage
+result = remove_subject(
+    "550e8400-e29b-41d4-a716-446655440000",
+    "660e8400-e29b-41d4-a716-446655440001"
+)
+```
+
+```javascript
+// Remove subject from watchlist
+async function removeSubject(watchlistId, subjectId) {
+  const url = `${BASE_URL}/kyc/watchlists/${watchlistId}/subjects/${subjectId}`;
+  
+  const response = await fetch(url, {
+    method: 'DELETE',
+    headers
+  });
+  
+  return response.json();
+}
+
+// Usage
+const result = await removeSubject(
+  '550e8400-e29b-41d4-a716-446655440000',
+  '660e8400-e29b-41d4-a716-446655440001'
+);
+```
+
+</CodeGroup>
+
+## Update Watchlist
+
+<CodeGroup>
+
+```python
+# Update watchlist configuration
+def update_watchlist(watchlist_id, name=None, check_frequency=None, 
+                     lists_to_monitor=None, status=None, alert_config=None):
+    url = f"{BASE_URL}/kyc/watchlists/{watchlist_id}"
+    payload = {}
+    
+    if name:
+        payload["name"] = name
+    if check_frequency:
+        payload["check_frequency"] = check_frequency
+    if lists_to_monitor:
+        payload["lists_to_monitor"] = lists_to_monitor
+    if status:
+        payload["status"] = status
+    if alert_config:
+        payload["alert_config"] = alert_config
+    
+    response = requests.put(url, json=payload, headers=headers)
+    return response.json()
+
+# Usage examples
+# Update name
+update_watchlist("550e8400-e29b-41d4-a716-446655440000", name="Updated Name")
+
+# Change frequency
+update_watchlist("550e8400-e29b-41d4-a716-446655440000", check_frequency="weekly")
+
+# Pause watchlist
+update_watchlist("550e8400-e29b-41d4-a716-446655440000", status="paused")
+
+# Resume watchlist
+update_watchlist("550e8400-e29b-41d4-a716-446655440000", status="active")
+
+# Update alert config
+update_watchlist(
+    "550e8400-e29b-41d4-a716-446655440000",
+    alert_config={
+        "on_new_match": True,
+        "webhook_url": "https://new-webhook.com/kyc"
+    }
+)
+```
+
+```javascript
+// Update watchlist configuration
+async function updateWatchlist(watchlistId, updates) {
+  const url = `${BASE_URL}/kyc/watchlists/${watchlistId}`;
+  
+  const response = await fetch(url, {
+    method: 'PUT',
+    headers,
+    body: JSON.stringify(updates)
+  });
+  
+  return response.json();
+}
+
+// Usage examples
+// Update name
+await updateWatchlist('550e8400-e29b-41d4-a716-446655440000', {
+  name: 'Updated Name'
+});
+
+// Change frequency
+await updateWatchlist('550e8400-e29b-41d4-a716-446655440000', {
+  check_frequency: 'weekly'
+});
+
+// Pause watchlist
+await updateWatchlist('550e8400-e29b-41d4-a716-446655440000', {
+  status: 'paused'
+});
+
+// Resume watchlist
+await updateWatchlist('550e8400-e29b-41d4-a716-446655440000', {
+  status: 'active'
+});
+
+// Update alert config
+await updateWatchlist('550e8400-e29b-41d4-a716-446655440000', {
+  alert_config: {
+    on_new_match: true,
+    webhook_url: 'https://new-webhook.com/kyc'
+  }
+});
+```
+
+</CodeGroup>
+
+## Delete Watchlist
+
+<CodeGroup>
+
+```python
+# Delete watchlist
+def delete_watchlist(watchlist_id):
+    url = f"{BASE_URL}/kyc/watchlists/{watchlist_id}"
+    response = requests.delete(url, headers=headers)
+    return response.json()
+
+# Usage
+result = delete_watchlist("550e8400-e29b-41d4-a716-446655440000")
+```
+
+```javascript
+// Delete watchlist
+async function deleteWatchlist(watchlistId) {
+  const url = `${BASE_URL}/kyc/watchlists/${watchlistId}`;
+  
+  const response = await fetch(url, {
+    method: 'DELETE',
+    headers
+  });
+  
+  return response.json();
+}
+
+// Usage
+const result = await deleteWatchlist('550e8400-e29b-41d4-a716-446655440000');
+```
+
+</CodeGroup>
+
+## Common Workflows
+
+### Complete Watchlist Management
+
+<CodeGroup>
+
+```python
+class WatchlistManager:
+    def __init__(self, base_url, token):
+        self.base_url = base_url
+        self.headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json"
+        }
+    
+    def create(self, name, lists_to_monitor=None):
+        url = f"{self.base_url}/kyc/watchlists"
+        payload = {"name": name, "check_frequency": "daily"}
+        if lists_to_monitor:
+            payload["lists_to_monitor"] = lists_to_monitor
+        
+        response = requests.post(url, json=payload, headers=self.headers)
+        return response.json()
+    
+    def get(self, watchlist_id):
+        url = f"{self.base_url}/kyc/watchlists/{watchlist_id}"
+        response = requests.get(url, headers=self.headers)
+        return response.json()
+    
+    def add_subject(self, watchlist_id, full_name, identifier=None, identifier_type=None):
+        url = f"{self.base_url}/kyc/watchlists/{watchlist_id}/subjects"
+        payload = {"full_name": full_name}
+        if identifier:
+            payload["identifier"] = identifier
+        if identifier_type:
+            payload["identifier_type"] = identifier_type
+        
+        response = requests.post(url, json=payload, headers=self.headers)
+        return response.json()
+    
+    def list_all(self):
+        url = f"{self.base_url}/kyc/watchlists"
+        response = requests.get(url, headers=self.headers)
+        return response.json()
+    
+    def delete(self, watchlist_id):
+        url = f"{self.base_url}/kyc/watchlists/{watchlist_id}"
+        response = requests.delete(url, headers=self.headers)
+        return response.json()
+
+# Usage
+manager = WatchlistManager(BASE_URL, "YOUR_TOKEN")
+
+# Create watchlist
+watchlist = manager.create("Customer Monitoring", ["ofac", "un"])
+watchlist_id = watchlist["data"]["watchlist_id"]
+
+# Add subjects
+manager.add_subject(watchlist_id, "John Doe", "12345678", "document")
+manager.add_subject(watchlist_id, "Jane Smith", "87654321", "document")
+
+# Get details
+details = manager.get(watchlist_id)
+print(f"Monitoring {len(details['data']['subjects'])} subjects")
+```
+
+```javascript
+class WatchlistManager {
+  constructor(baseUrl, token) {
+    this.baseUrl = baseUrl;
+    this.headers = {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    };
+  }
+  
+  async create(name, listsToMonitor) {
+    const url = `${this.baseUrl}/kyc/watchlists`;
+    const payload = { name, check_frequency: 'daily' };
+    if (listsToMonitor) {
+      payload.lists_to_monitor = listsToMonitor;
+    }
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify(payload)
+    });
+    
+    return response.json();
+  }
+  
+  async get(watchlistId) {
+    const url = `${this.baseUrl}/kyc/watchlists/${watchlistId}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: this.headers
+    });
+    
+    return response.json();
+  }
+  
+  async addSubject(watchlistId, fullName, identifier, identifierType) {
+    const url = `${this.baseUrl}/kyc/watchlists/${watchlistId}/subjects`;
+    const payload = { full_name: fullName };
+    if (identifier) {
+      payload.identifier = identifier;
+    }
+    if (identifierType) {
+      payload.identifier_type = identifierType;
+    }
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify(payload)
+    });
+    
+    return response.json();
+  }
+  
+  async listAll() {
+    const url = `${this.baseUrl}/kyc/watchlists`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: this.headers
+    });
+    
+    return response.json();
+  }
+  
+  async delete(watchlistId) {
+    const url = `${this.baseUrl}/kyc/watchlists/${watchlistId}`;
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: this.headers
+    });
+    
+    return response.json();
+  }
+}
+
+// Usage
+const manager = new WatchlistManager(BASE_URL, 'YOUR_TOKEN');
+
+// Create watchlist
+const watchlist = await manager.create('Customer Monitoring', ['ofac', 'un']);
+const watchlistId = watchlist.data.watchlist_id;
+
+// Add subjects
+await manager.addSubject(watchlistId, 'John Doe', '12345678', 'document');
+await manager.addSubject(watchlistId, 'Jane Smith', '87654321', 'document');
+
+// Get details
+const details = await manager.get(watchlistId);
+console.log(`Monitoring ${details.data.subjects.length} subjects`);
+```
+
+</CodeGroup>
+
+### Bulk Import Subjects
+
+<CodeGroup>
+
+```python
+# Import multiple subjects from a list
+def import_subjects_to_watchlist(watchlist_id, subjects_list):
+    url = f"{BASE_URL}/kyc/watchlists/{watchlist_id}/subjects/batch"
+    
+    # Process in batches of 50
+    batch_size = 50
+    results = []
+    
+    for i in range(0, len(subjects_list), batch_size):
+        batch = subjects_list[i:i + batch_size]
+        payload = {"subjects": batch}
+        
+        response = requests.post(url, json=payload, headers=headers)
+        results.append(response.json())
+    
+    return results
+
+# Usage
+subjects_to_import = [
+    {"full_name": f"Person {i}", "identifier": f"ID{i}", "identifier_type": "document"}
+    for i in range(1, 101)
+]
+
+results = import_subjects_to_watchlist("550e8400-e29b-41d4-a716-446655440000", subjects_to_import)
+```
+
+```javascript
+// Import multiple subjects from a list
+async function importSubjectsToWatchlist(watchlistId, subjectsList) {
+  const url = `${BASE_URL}/kyc/watchlists/${watchlistId}/subjects/batch`;
+  
+  // Process in batches of 50
+  const batchSize = 50;
+  const results = [];
+  
+  for (let i = 0; i < subjectsList.length; i += batchSize) {
+    const batch = subjectsList.slice(i, i + batchSize);
+    const payload = { subjects: batch };
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload)
+    });
+    
+    results.push(await response.json());
+  }
+  
+  return results;
+}
+
+// Usage
+const subjectsToImport = Array.from({ length: 100 }, (_, i) => ({
+  full_name: `Person ${i + 1}`,
+  identifier: `ID${i + 1}`,
+  identifier_type: 'document'
+}));
+
+const results = await importSubjectsToWatchlist('550e8400-e29b-41d4-a716-446655440000', subjectsToImport);
+```
+
+</CodeGroup>
+
+## Error Handling
+
+<CodeGroup>
+
+```python
+import requests
+from requests.exceptions import RequestException
+
+def safe_watchlist_operation(operation_func, *args, **kwargs):
+    try:
+        result = operation_func(*args, **kwargs)
+        
+        if "error" in result:
+            print(f"API Error: {result['error']}")
+            return None
+        
+        return result
+        
+    except RequestException as e:
+        print(f"Request failed: {e}")
+        return None
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        return None
+
+# Usage
+def create_watchlist_safe(name):
+    def _create():
+        url = f"{BASE_URL}/kyc/watchlists"
+        response = requests.post(url, json={"name": name}, headers=headers, timeout=30)
+        response.raise_for_status()
+        return response.json()
+    
+    return safe_watchlist_operation(_create)
+```
+
+```javascript
+async function safeWatchlistOperation(operation) {
+  try {
+    const result = await operation();
+    
+    if (result.error) {
+      console.error('API Error:', result.error);
+      return null;
+    }
+    
+    return result;
+    
+  } catch (error) {
+    console.error('Request failed:', error);
+    return null;
+  }
+}
+
+// Usage
+async function createWatchlistSafe(name) {
+  return safeWatchlistOperation(async () => {
+    const url = `${BASE_URL}/kyc/watchlists`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ name }),
+      signal: AbortSignal.timeout(30000)
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return response.json();
+  });
+}
+```
+
+</CodeGroup>
+
+## Related References
+
+- [Watchlists Overview](/api-reference/watchlists/overview) - Conceptual overview
+- [Create Watchlist API](/api-reference/watchlists/create) - Full API reference
+- [List Check API](/api-reference/list-check) - One-time checks
+- [Validate Person or Company](/validate-person-entity) - Individual entity validation guide
+

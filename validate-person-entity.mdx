@@ -1,0 +1,661 @@
+---
+title: 'Validate Person or Company'
+description: 'Learn how to check individuals and organizations against sanctions and PEP lists'
+---
+
+## Overview
+
+This guide shows you how to validate individuals (persons) and organizations (companies) against sanctions lists and PEP databases using the KYC API. This is essential for compliance screening, onboarding customers, and monitoring business relationships.
+
+## Quick Example
+
+<CodeGroup>
+
+```python
+import requests
+
+url = "https://stg.kyc.legaltalent.ai/kyc"
+headers = {
+    "Authorization": "Bearer YOUR_TOKEN",
+    "Content-Type": "application/json"
+}
+
+# Validate a person
+person_payload = {
+    "subject": {
+        "full_name": "John Doe",
+        "nationality": "US",
+        "birth_date": "1985-03-15"
+    },
+    "list_name": "ofac"
+}
+
+response = requests.post(url, json=person_payload, headers=headers)
+data = response.json()
+
+if data.get("result", {}).get("is_match"):
+    print("Match found in sanctions list!")
+    print(f"Match count: {data['result']['match_count']}")
+    print(f"Details: {data['result'].get('matches', [])}")
+else:
+    print("No matches found - entity is clear")
+
+# Validate a company/organization
+company_payload = {
+    "subject": {
+        "full_name": "Acme Corporation"
+    },
+    "lists": ["ofac", "un", "eu"]
+}
+
+response = requests.post(url, json=company_payload, headers=headers)
+data = response.json()
+```
+
+```javascript
+const url = 'https://stg.kyc.legaltalent.ai/kyc';
+
+// Validate a person
+const personPayload = {
+  subject: {
+    full_name: 'John Doe',
+    nationality: 'US',
+    birth_date: '1985-03-15'
+  },
+  list_name: 'ofac'
+};
+
+fetch(url, {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_TOKEN',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(personPayload)
+})
+  .then(response => response.json())
+  .then(data => {
+    if (data.result?.is_match) {
+      console.log('Match found in sanctions list!');
+      console.log(`Match count: ${data.result.match_count}`);
+      console.log('Details:', data.result.matches);
+    } else {
+      console.log('No matches found - entity is clear');
+    }
+  });
+
+// Validate a company/organization
+const companyPayload = {
+  subject: {
+    full_name: 'Acme Corporation'
+  },
+  lists: ['ofac', 'un', 'eu']
+};
+
+fetch(url, {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_TOKEN',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(companyPayload)
+})
+  .then(response => response.json())
+  .then(data => console.log(data));
+```
+
+</CodeGroup>
+
+## Validating Individuals (Persons)
+
+### Basic Person Check
+
+For basic screening, provide the person's full name. Additional information improves accuracy:
+
+<CodeGroup>
+
+```python
+# Basic check with name only
+payload = {
+    "subject": {
+        "full_name": "Jane Smith"
+    },
+    "list_name": "ofac"
+}
+
+# Enhanced check with document and nationality
+payload = {
+    "subject": {
+        "full_name": "Juan Pérez",
+        "document_id": "12345678",
+        "document_type": "CI",
+        "nationality": "UY",
+        "birth_date": "1990-05-20"
+    },
+    "list_name": "senaclaft_uy"
+}
+
+response = requests.post(url, json=payload, headers=headers)
+```
+
+```javascript
+// Basic check with name only
+const basicPayload = {
+  subject: {
+    full_name: 'Jane Smith'
+  },
+  list_name: 'ofac'
+};
+
+// Enhanced check with document and nationality
+const enhancedPayload = {
+  subject: {
+    full_name: 'Juan Pérez',
+    document_id: '12345678',
+    document_type: 'CI',
+    nationality: 'UY',
+    birth_date: '1990-05-20'
+  },
+  list_name: 'senaclaft_uy'
+};
+
+fetch(url, {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_TOKEN',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(enhancedPayload)
+})
+  .then(response => response.json())
+  .then(data => console.log(data));
+```
+
+</CodeGroup>
+
+### Person Fields
+
+| Field | Required | Description | Example |
+|-------|----------|-------------|---------|
+| `full_name` | Yes* | Full name of the person | "John Doe" |
+| `document_id` | No | Government-issued ID number | "12345678" |
+| `document_type` | No | Type of document | "Passport", "CI", "DNI" |
+| `nationality` | No | Two-letter country code (ISO 3166-1) | "US", "UY" |
+| `birth_date` | No | Date of birth (YYYY-MM-DD) | "1985-03-15" |
+
+\* Required if no `identifiers` or `document_id` provided
+
+## Validating Organizations (Companies)
+
+Organizations are validated using their legal name or tax identification numbers:
+
+<CodeGroup>
+
+```python
+# Check company by name
+payload = {
+    "subject": {
+        "full_name": "Global Trading Corporation"
+    },
+    "lists": ["ofac", "un", "eu"]
+}
+
+response = requests.post(url, json=payload, headers=headers)
+data = response.json()
+
+# Check company with tax ID
+payload = {
+    "subject": {
+        "full_name": "Acme Corporation",
+        "identifiers": [
+            {
+                "type": "tax_id",
+                "value": "TAX-987654"
+            }
+        ]
+    },
+    "list_name": "ofac"
+}
+
+response = requests.post(url, json=payload, headers=headers)
+```
+
+```javascript
+// Check company by name
+const companyPayload = {
+  subject: {
+    full_name: 'Global Trading Corporation'
+  },
+  lists: ['ofac', 'un', 'eu']
+};
+
+fetch(url, {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_TOKEN',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(companyPayload)
+})
+  .then(response => response.json())
+  .then(data => console.log(data));
+
+// Check company with tax ID
+const companyWithTaxId = {
+  subject: {
+    full_name: 'Acme Corporation',
+    identifiers: [
+      {
+        type: 'tax_id',
+        value: 'TAX-987654'
+      }
+    ]
+  },
+  list_name: 'ofac'
+};
+
+fetch(url, {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_TOKEN',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(companyWithTaxId)
+})
+  .then(response => response.json())
+  .then(data => console.log(data));
+```
+
+</CodeGroup>
+
+## Checking Multiple Lists
+
+You can check against multiple lists simultaneously for comprehensive screening:
+
+<CodeGroup>
+
+```python
+# Check against multiple lists
+payload = {
+    "subject": {
+        "full_name": "John Doe",
+        "nationality": "US",
+        "birth_date": "1985-03-15"
+    },
+    "lists": ["ofac", "un", "eu", "senaclaft_uy"],
+    "search_type": "composite"
+}
+
+response = requests.post(url, json=payload, headers=headers)
+data = response.json()
+
+# Process results
+if data.get("result", {}).get("is_match"):
+    matches = data["result"].get("matches", [])
+    for match in matches:
+        print(f"Found in {match.get('list_name')}: {match.get('match_details')}")
+```
+
+```javascript
+// Check against multiple lists
+const multiListPayload = {
+  subject: {
+    full_name: 'John Doe',
+    nationality: 'US',
+    birth_date: '1985-03-15'
+  },
+  lists: ['ofac', 'un', 'eu', 'senaclaft_uy'],
+  search_type: 'composite'
+};
+
+fetch(url, {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_TOKEN',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(multiListPayload)
+})
+  .then(response => response.json())
+  .then(data => {
+    if (data.result?.is_match) {
+      const matches = data.result.matches || [];
+      matches.forEach(match => {
+        console.log(`Found in ${match.list_name}:`, match.match_details);
+      });
+    }
+  });
+```
+
+</CodeGroup>
+
+## Available Lists
+
+| List Name | Description | Supports |
+|-----------|-------------|----------|
+| `ofac` | OFAC Sanctions List (US Treasury) | Persons, Organizations |
+| `un` | UN Security Council Sanctions | Persons, Organizations |
+| `eu` | EU Consolidated Financial Sanctions | Persons, Organizations |
+| `senaclaft_uy` | SENACLAFT Uruguay (PEP & Sanctions) | Persons |
+
+## Search Types
+
+Choose the matching strategy based on your needs:
+
+| Search Type | Description | Use Case |
+|-------------|-------------|----------|
+| `exact` | Exact name matching | High precision, strict matching |
+| `fuzzy` | Approximate string matching | Handle typos and variations |
+| `token` | Word-based matching | Find partial name matches |
+| `composite` | Combined strategy (default) | Balanced precision and recall |
+| `llm_enhanced` | LLM-filtered matching | Maximum precision with semantic filtering |
+
+## Common Use Cases
+
+### 1. Customer Onboarding
+
+Validate new customers before account creation:
+
+<CodeGroup>
+
+```python
+def validate_customer(name, nationality=None, document_id=None):
+    payload = {
+        "subject": {"full_name": name}
+    }
+    
+    if document_id:
+        payload["subject"]["document_id"] = document_id
+    if nationality:
+        payload["subject"]["nationality"] = nationality
+    
+    payload["lists"] = ["ofac", "un"]
+    
+    response = requests.post(url, json=payload, headers=headers)
+    return response.json()
+
+# Usage
+result = validate_customer("John Doe", "US", "P123456")
+if result.get("result", {}).get("is_match"):
+    print("Customer flagged - review required")
+else:
+    print("Customer cleared for onboarding")
+```
+
+```javascript
+function validateCustomer(name, nationality, documentId) {
+  const payload = {
+    subject: { full_name: name }
+  };
+  
+  if (documentId) {
+    payload.subject.document_id = documentId;
+  }
+  if (nationality) {
+    payload.subject.nationality = nationality;
+  }
+  
+  payload.lists = ['ofac', 'un'];
+  
+  return fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer YOUR_TOKEN',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  })
+    .then(response => response.json());
+}
+
+// Usage
+validateCustomer('John Doe', 'US', 'P123456')
+  .then(result => {
+    if (result.result?.is_match) {
+      console.log('Customer flagged - review required');
+    } else {
+      console.log('Customer cleared for onboarding');
+    }
+  });
+```
+
+</CodeGroup>
+
+### 2. Batch Validation
+
+Validate multiple entities at once:
+
+<CodeGroup>
+
+```python
+entities = [
+    {"full_name": "John Doe", "nationality": "US"},
+    {"full_name": "Jane Smith", "nationality": "GB"},
+    {"full_name": "Acme Corp"}
+]
+
+results = []
+for entity in entities:
+    payload = {
+        "subject": entity,
+        "lists": ["ofac", "un"]
+    }
+    response = requests.post(url, json=payload, headers=headers)
+    results.append(response.json())
+
+# Process results
+for i, result in enumerate(results):
+    entity_name = entities[i]["full_name"]
+    if result.get("result", {}).get("is_match"):
+        print(f"{entity_name}: FLAGGED")
+    else:
+        print(f"{entity_name}: CLEAR")
+```
+
+```javascript
+const entities = [
+  { full_name: 'John Doe', nationality: 'US' },
+  { full_name: 'Jane Smith', nationality: 'GB' },
+  { full_name: 'Acme Corp' }
+];
+
+const promises = entities.map(entity => {
+  return fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer YOUR_TOKEN',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      subject: entity,
+      lists: ['ofac', 'un']
+    })
+  })
+    .then(response => response.json());
+});
+
+Promise.all(promises)
+  .then(results => {
+    results.forEach((result, i) => {
+      const entityName = entities[i].full_name;
+      if (result.result?.is_match) {
+        console.log(`${entityName}: FLAGGED`);
+      } else {
+        console.log(`${entityName}: CLEAR`);
+      }
+    });
+  });
+```
+
+</CodeGroup>
+
+### 3. Continuous Monitoring with Watchlists
+
+For ongoing monitoring, create a watchlist instead of one-time checks:
+
+<CodeGroup>
+
+```python
+# Create a watchlist for continuous monitoring
+watchlist_url = "https://stg.kyc.legaltalent.ai/kyc/watchlists"
+watchlist_payload = {
+    "name": "Customer Monitoring",
+    "subjects": [
+        {
+            "full_name": "John Doe",
+            "document_id": "12345678",
+            "identifier_type": "document"
+        },
+        {
+            "full_name": "Acme Corporation",
+            "identifier": "TAX-987654",
+            "identifier_type": "tax_id"
+        }
+    ],
+    "lists_to_monitor": ["ofac", "un", "eu"],
+    "check_frequency": "daily"
+}
+
+response = requests.post(watchlist_url, json=watchlist_payload, headers=headers)
+print(response.json())
+```
+
+```javascript
+// Create a watchlist for continuous monitoring
+const watchlistUrl = 'https://stg.kyc.legaltalent.ai/kyc/watchlists';
+const watchlistPayload = {
+  name: 'Customer Monitoring',
+  subjects: [
+    {
+      full_name: 'John Doe',
+      document_id: '12345678',
+      identifier_type: 'document'
+    },
+    {
+      full_name: 'Acme Corporation',
+      identifier: 'TAX-987654',
+      identifier_type: 'tax_id'
+    }
+  ],
+  lists_to_monitor: ['ofac', 'un', 'eu'],
+  check_frequency: 'daily'
+};
+
+fetch(watchlistUrl, {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_TOKEN',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(watchlistPayload)
+})
+  .then(response => response.json())
+  .then(data => console.log(data));
+```
+
+</CodeGroup>
+
+## Error Handling
+
+Always handle potential errors in your implementation:
+
+<CodeGroup>
+
+```python
+def validate_entity(subject_data, lists=None):
+    try:
+        payload = {
+            "subject": subject_data
+        }
+        if lists:
+            payload["lists"] = lists
+        else:
+            payload["list_name"] = "ofac"
+        
+        response = requests.post(url, json=payload, headers=headers, timeout=30)
+        response.raise_for_status()
+        
+        data = response.json()
+        
+        if "error" in data:
+            print(f"API Error: {data['error']}")
+            return None
+        
+        return data
+        
+    except requests.exceptions.Timeout:
+        print("Request timed out")
+        return None
+    except requests.exceptions.RequestException as e:
+        print(f"Request failed: {e}")
+        return None
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        return None
+```
+
+```javascript
+async function validateEntity(subjectData, lists) {
+  try {
+    const payload = {
+      subject: subjectData
+    };
+    
+    if (lists) {
+      payload.lists = lists;
+    } else {
+      payload.list_name = 'ofac';
+    }
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer YOUR_TOKEN',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    if (data.error) {
+      console.error('API Error:', data.error);
+      return null;
+    }
+    
+    return data;
+    
+  } catch (error) {
+    console.error('Request failed:', error);
+    return null;
+  }
+}
+```
+
+</CodeGroup>
+
+## Best Practices
+
+1. **Provide Complete Information**: Include `nationality`, `birth_date`, and `document_id` when available to improve matching accuracy.
+
+2. **Use Multiple Lists**: Check against multiple sanctions lists (`ofac`, `un`, `eu`) for comprehensive screening.
+
+3. **Choose Appropriate Search Type**: Use `composite` for balanced results, `exact` for strict matching, or `llm_enhanced` for maximum precision.
+
+4. **Handle Errors Gracefully**: Always implement error handling and timeouts in your integration.
+
+5. **Consider Watchlists**: For entities that need ongoing monitoring, use [watchlists](/api-reference/watchlists/overview) instead of repeated API calls.
+
+6. **Respect Rate Limits**: The API has rate limits (1000 requests per 5 minutes per IP). Implement retry logic with exponential backoff if needed.
+
+## Related References
+
+- [List Check API Reference](/api-reference/list-check) - Complete API documentation
+- [Watchlists Overview](/watchlists/overview) - Continuous monitoring solution
+- [Validate Cryptocurrency Wallets](/validate-crypto-wallets) - Guide for wallet validation
+- [Adverse Media Screening](/api-reference/adverse-media) - Check for negative news
+
