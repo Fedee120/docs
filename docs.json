@@ -46,7 +46,30 @@
             "group": "Compliance Screening",
             "pages": [
               "api-reference/list-check",
-              "api-reference/adverse-media"
+              "api-reference/adverse-media",
+              "api-reference/web-validation",
+              "api-reference/crypto",
+              "api-reference/documents"
+            ]
+          },
+          {
+            "group": "Batch Processing",
+            "pages": [
+              "api-reference/jobs"
+            ]
+          },
+          {
+            "group": "KYC Workflows & Sessions",
+            "pages": [
+              "api-reference/workflows",
+              "api-reference/sessions",
+              "api-reference/sessions-public"
+            ]
+          },
+          {
+            "group": "Tenant Management",
+            "pages": [
+              "api-reference/tenants"
             ]
           },
           {

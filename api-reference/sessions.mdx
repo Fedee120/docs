@@ -1,0 +1,424 @@
+---
+title: 'Sessions'
+api: 'GET /kyc/sessions'
+---
+
+Manage KYC onboarding sessions for end users. Sessions track progress through workflows, store document uploads, and manage the onboarding process from creation to approval.
+
+## Overview
+
+Sessions represent individual KYC onboarding processes for end users. Each session:
+
+- **Links to a Workflow**: Defines the steps and requirements
+- **Tracks Progress**: Monitors which steps are completed
+- **Stores Documents**: Uploaded documents are stored securely
+- **Runs Validations**: Automated checks run when configured
+- **Public Access**: End users access sessions via public access tokens
+
+## Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/kyc/sessions` | Create a new session |
+| `GET` | `/kyc/sessions` | List sessions (paginated) |
+| `GET` | `/kyc/sessions/{session_id}` | Get session details |
+| `PATCH` | `/kyc/sessions/{session_id}` | Update session status |
+| `DELETE` | `/kyc/sessions/{session_id}` | Delete session |
+| `POST` | `/kyc/sessions/{session_id}/generate-link` | Generate/regenerate access link |
+| `POST` | `/kyc/sessions/{session_id}/validate` | Run validation checks |
+
+## Authentication
+
+Requires `kyc:create` permission for creating sessions and `kyc:read` permission for retrieving sessions. Include your Bearer token in the Authorization header.
+
+## Create Session
+
+Create a new KYC onboarding session for an end user.
+
+### Endpoint
+
+```
+POST /kyc/sessions
+```
+
+### Request Body Parameters
+
+<ParamFields>
+  <ParamField
+    name="workflow_id"
+    type="string"
+    required
+    description="ID of the workflow to use for this session"
+  />
+  <ParamField
+    name="ttl_days"
+    type="integer"
+    description="Number of days until session expires (default: 7)"
+  />
+  <ParamField
+    name="metadata"
+    type="object"
+    description="Optional metadata to store with the session"
+  />
+</ParamFields>
+
+### Request Example
+
+```bash
+curl -X POST https://stg.kyc.legaltalent.ai/kyc/sessions \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workflow_id": "550e8400-e29b-41d4-a716-446655440000",
+    "ttl_days": 7,
+    "metadata": {
+      "user_email": "user@example.com",
+      "reference_id": "REF123"
+    }
+  }'
+```
+
+### Response Format
+
+```json
+{
+  "status": "success",
+  "data": {
+    "session_id": "660e8400-e29b-41d4-a716-446655440001",
+    "workflow_id": "550e8400-e29b-41d4-a716-446655440000",
+    "status": "active",
+    "access_token": "770e8400-e29b-41d4-a716-446655440002",
+    "access_url": "https://stg.kyc.legaltalent.ai/public/sessions/770e8400-e29b-41d4-a716-446655440002",
+    "current_step_index": 0,
+    "expires_at": 1732278600,
+    "created_at": "2024-11-22T10:30:00Z"
+  }
+}
+```
+
+## List Sessions
+
+Retrieve all sessions for your tenant with pagination.
+
+### Endpoint
+
+```
+GET /kyc/sessions
+```
+
+### Query Parameters
+
+<ParamFields>
+  <ParamField
+    query="status"
+    type="string"
+    description="Filter by status: 'draft', 'active', 'completed', 'expired', 'approved', 'rejected', 'manual_review'"
+  />
+  <ParamField
+    query="workflow_id"
+    type="string"
+    description="Filter by workflow ID"
+  />
+  <ParamField
+    query="limit"
+    type="integer"
+    description="Number of results per page (default: 20, max: 100)"
+  />
+  <ParamField
+    query="next_token"
+    type="string"
+    description="Pagination token from previous response"
+  />
+</ParamFields>
+
+### Request Example
+
+```bash
+curl "https://stg.kyc.legaltalent.ai/kyc/sessions?status=active&limit=20" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Response Format
+
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "session_id": "660e8400-e29b-41d4-a716-446655440001",
+      "workflow_id": "550e8400-e29b-41d4-a716-446655440000",
+      "status": "active",
+      "current_step_index": 1,
+      "created_at": "2024-11-22T10:30:00Z",
+      "updated_at": "2024-11-22T10:35:00Z"
+    }
+  ],
+  "pagination": {
+    "next_token": "eyJzZXNzaW9uX2lkIjoiNjYwZTg0MDA..."
+  }
+}
+```
+
+## Get Session Details
+
+Retrieve detailed information about a specific session.
+
+### Endpoint
+
+```
+GET /kyc/sessions/{session_id}
+```
+
+### Path Parameters
+
+<ParamFields>
+  <ParamField
+    path="session_id"
+    type="string"
+    required
+    description="The session ID"
+  />
+</ParamFields>
+
+### Request Example
+
+```bash
+curl https://stg.kyc.legaltalent.ai/kyc/sessions/660e8400-e29b-41d4-a716-446655440001 \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Response Format
+
+```json
+{
+  "status": "success",
+  "data": {
+    "session_id": "660e8400-e29b-41d4-a716-446655440001",
+    "tenant_id": "tenant123",
+    "workflow_id": "550e8400-e29b-41d4-a716-446655440000",
+    "workflow_version": 1,
+    "status": "active",
+    "access_token": "770e8400-e29b-41d4-a716-446655440002",
+    "current_step_index": 1,
+    "steps_data": [
+      {
+        "step_id": "step_1",
+        "status": "completed",
+        "completed_at": "2024-11-22T10:32:00Z"
+      },
+      {
+        "step_id": "step_2",
+        "status": "in_progress"
+      }
+    ],
+    "documents": [
+      {
+        "document_id": "doc_1",
+        "document_type": "id",
+        "uploaded_at": "2024-11-22T10:32:00Z"
+      }
+    ],
+    "validation_results": null,
+    "expires_at": 1732278600,
+    "created_at": "2024-11-22T10:30:00Z",
+    "updated_at": "2024-11-22T10:35:00Z"
+  }
+}
+```
+
+## Update Session Status
+
+Update the status of a session (approve, reject, or request manual review).
+
+### Endpoint
+
+```
+PATCH /kyc/sessions/{session_id}
+```
+
+### Request Body Parameters
+
+<ParamFields>
+  <ParamField
+    name="status"
+    type="string"
+    required
+    description="New status: 'approved', 'rejected', or 'manual_review'"
+  />
+  <ParamField
+    name="notes"
+    type="string"
+    description="Optional notes about the status change"
+  />
+</ParamFields>
+
+### Request Example
+
+```bash
+curl -X PATCH https://stg.kyc.legaltalent.ai/kyc/sessions/660e8400-e29b-41d4-a716-446655440001 \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "approved",
+    "notes": "All documents verified and validated"
+  }'
+```
+
+### Response Format
+
+```json
+{
+  "status": "success",
+  "data": {
+    "session_id": "660e8400-e29b-41d4-a716-446655440001",
+    "status": "approved",
+    "updated_at": "2024-11-22T10:40:00Z"
+  }
+}
+```
+
+## Generate Access Link
+
+Generate or regenerate the public access link for a session.
+
+### Endpoint
+
+```
+POST /kyc/sessions/{session_id}/generate-link
+```
+
+### Request Example
+
+```bash
+curl -X POST https://stg.kyc.legaltalent.ai/kyc/sessions/660e8400-e29b-41d4-a716-446655440001/generate-link \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Response Format
+
+```json
+{
+  "status": "success",
+  "data": {
+    "access_token": "770e8400-e29b-41d4-a716-446655440002",
+    "access_url": "https://stg.kyc.legaltalent.ai/public/sessions/770e8400-e29b-41d4-a716-446655440002"
+  }
+}
+```
+
+## Run Validation Checks
+
+Manually trigger validation checks for a completed session.
+
+### Endpoint
+
+```
+POST /kyc/sessions/{session_id}/validate
+```
+
+### Request Example
+
+```bash
+curl -X POST https://stg.kyc.legaltalent.ai/kyc/sessions/660e8400-e29b-41d4-a716-446655440001/validate \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Response Format
+
+```json
+{
+  "status": "success",
+  "data": {
+    "session_id": "660e8400-e29b-41d4-a716-446655440001",
+    "validation_results": {
+      "lists": {
+        "is_match": false,
+        "match_count": 0
+      },
+      "crypto": {
+        "is_match": false,
+        "match_count": 0
+      },
+      "adverse_media": {
+        "risk_score": 15,
+        "decision": "CLEAR"
+      }
+    },
+    "validated_at": "2024-11-22T10:45:00Z"
+  }
+}
+```
+
+## Delete Session
+
+Delete a session and all associated data.
+
+### Endpoint
+
+```
+DELETE /kyc/sessions/{session_id}
+```
+
+### Request Example
+
+```bash
+curl -X DELETE https://stg.kyc.legaltalent.ai/kyc/sessions/660e8400-e29b-41d4-a716-446655440001 \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Response Format
+
+```json
+{
+  "status": "success",
+  "message": "Session deleted successfully"
+}
+```
+
+## Session Statuses
+
+| Status | Description |
+|--------|-------------|
+| `draft` | Session created but not yet started |
+| `active` | Session is in progress |
+| `completed` | All steps completed, awaiting review |
+| `expired` | Session expired (TTL exceeded) |
+| `approved` | Session approved by tenant |
+| `rejected` | Session rejected by tenant |
+| `manual_review` | Session requires manual review |
+
+## Step Statuses
+
+| Status | Description |
+|--------|-------------|
+| `pending` | Step not yet started |
+| `in_progress` | Step in progress |
+| `completed` | Step completed |
+
+## Status Codes
+
+| Code | Description |
+|------|-------------|
+| 200 | Success |
+| 201 | Created - Session created successfully |
+| 400 | Bad Request - Invalid parameters |
+| 401 | Unauthorized - Missing or invalid token |
+| 403 | Forbidden - Insufficient permissions |
+| 404 | Not Found - Session not found |
+| 500 | Internal Server Error |
+
+## Best Practices
+
+- **TTL Management**: Set appropriate TTL values based on your onboarding timeline
+- **Status Tracking**: Monitor session statuses to identify bottlenecks
+- **Access Links**: Share access links securely with end users
+- **Validation Timing**: Run validations after all steps are completed
+- **Document Storage**: Documents are stored securely in S3 with encryption
+
+## Integration Tips
+
+1. **Session Creation**: Create sessions when starting onboarding processes
+2. **Progress Tracking**: Monitor `current_step_index` to track user progress
+3. **Status Updates**: Update session status based on review decisions
+4. **Access Links**: Use generated access links for end-user access (see Public Sessions)
+

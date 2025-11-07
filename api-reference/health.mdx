@@ -25,18 +25,15 @@ This endpoint performs a basic liveness check. It's suitable for:
 
 ## Request Example
 
-<RequestExample>
-```bash Request
-  curl https://stg.kyc.legaltalent.ai/health
+```bash
+curl https://stg.kyc.legaltalent.ai/health
 ```
-</RequestExample>
 
 ## Response Format
 
 ### Success Response
 
-<ResponseExample>
-```json Success Response
+```json
 {
   "status": "ok",
   "service": "kyc-health",
@@ -48,7 +45,6 @@ This endpoint performs a basic liveness check. It's suitable for:
   "request_id": "abc-123-def"
 }
 ```
-</ResponseExample>
 
 ## Response Fields
 
@@ -108,9 +104,154 @@ After integration, verify the service is accessible:
 curl -f https://stg.kyc.legaltalent.ai/health || echo "Service unavailable"
 ```
 
+## Readiness Check
+
+The readiness endpoint performs a deeper health check that verifies dependencies (S3, DynamoDB) are accessible.
+
+### Endpoint
+
+```
+GET /health/ready
+```
+
+### Authentication
+
+Requires `health:readiness_check` permission. Include your Bearer token in the Authorization header.
+
+### Description
+
+This endpoint performs a readiness check that verifies:
+- S3 bucket accessibility (watchlist snapshots)
+- DynamoDB table accessibility (watchlists)
+- Overall service readiness
+
+Use this endpoint for:
+- Pre-deployment verification
+- Dependency health monitoring
+- Service readiness confirmation
+
+### Request Example
+
+```bash
+curl https://stg.kyc.legaltalent.ai/health/ready \
+    -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Response Format
+
+```json
+{
+  "status": "healthy",
+  "service": "kyc-health",
+  "check_type": "readiness",
+  "timestamp": "2024-11-22T10:30:00Z",
+  "cold_start": false,
+  "dependencies": {
+    "s3": {
+      "status": "healthy",
+      "service": "s3",
+      "bucket": "kyc-watchlists-snapshots-develop",
+      "message": "S3 bucket accessible"
+    },
+    "dynamodb": {
+      "status": "healthy",
+      "service": "dynamodb",
+      "table": "kyc-watchlists-develop",
+      "message": "DynamoDB table accessible"
+    }
+  },
+  "function_name": "kyc-health-develop",
+  "function_version": "$LATEST",
+  "request_id": "abc-123-def"
+}
+```
+
+### Degraded Status Response
+
+If any dependency is unhealthy, the overall status will be `"degraded"`:
+
+```json
+{
+  "status": "degraded",
+  "service": "kyc-health",
+  "check_type": "readiness",
+  "timestamp": "2024-11-22T10:30:00Z",
+  "dependencies": {
+    "s3": {
+      "status": "healthy",
+      "service": "s3",
+      "bucket": "kyc-watchlists-snapshots-develop",
+      "message": "S3 bucket accessible"
+    },
+    "dynamodb": {
+      "status": "unhealthy",
+      "service": "dynamodb",
+      "table": "kyc-watchlists-develop",
+      "error": "ResourceNotFoundException",
+      "message": "DynamoDB table not accessible: ResourceNotFoundException"
+    }
+  }
+}
+```
+
+### Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `status` | string | Overall status: `"healthy"` or `"degraded"` |
+| `service` | string | Service identifier: `"kyc-health"` |
+| `check_type` | string | Type of check: `"readiness"` |
+| `timestamp` | string | ISO 8601 timestamp of the check |
+| `cold_start` | boolean | `true` if this was a cold Lambda start |
+| `dependencies` | object | Status of each dependency (S3, DynamoDB) |
+
+### Dependency Status Fields
+
+Each dependency includes:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `status` | string | `"healthy"` or `"unhealthy"` |
+| `service` | string | Service name (`"s3"` or `"dynamodb"`) |
+| `message` | string | Human-readable status message |
+| `error` | string | Error code (only present if unhealthy) |
+
+### Status Codes
+
+| Code | Description |
+|------|-------------|
+| 200 | Readiness check completed (may be healthy or degraded) |
+| 403 | Forbidden - Missing `health:readiness_check` permission |
+| 401 | Unauthorized - Missing or invalid token |
+
+### Use Cases
+
+#### Pre-Deployment Verification
+
+```bash
+# Verify service is ready before deployment
+curl -f https://stg.kyc.legaltalent.ai/health/ready \
+  -H "Authorization: Bearer YOUR_TOKEN" || exit 1
+```
+
+#### Monitoring Integration
+
+```bash
+# Check readiness in monitoring script
+response=$(curl -s https://stg.kyc.legaltalent.ai/health/ready \
+  -H "Authorization: Bearer YOUR_TOKEN")
+status=$(echo $response | jq -r '.status')
+
+if [ "$status" != "healthy" ]; then
+  echo "Service degraded: $response"
+  # Send alert
+fi
+```
+
 ## Implementation Notes
 
 - **No Caching**: Each request performs a fresh check
-- **Public Access**: No authentication required (by design for monitoring)
-- **Always Available**: Returns 200 OK when the service is operational
+- **Public Access**: `/health` endpoint requires no authentication (by design for monitoring)
+- **Authenticated Access**: `/health/ready` requires `health:readiness_check` permission
+- **Always Available**: Returns 200 OK when the service is operational (status may be healthy or degraded)
 

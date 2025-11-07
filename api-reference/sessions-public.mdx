@@ -1,0 +1,441 @@
+---
+title: 'Public Sessions'
+api: 'GET /public/sessions/{access_token}'
+---
+
+Public endpoints for end users to access and interact with KYC onboarding sessions. These endpoints require no authentication - access is controlled via secure access tokens.
+
+## Overview
+
+Public session endpoints allow end users to:
+
+- **Access Sessions**: View session state and workflow definition
+- **Upload Documents**: Upload required documents
+- **Extract Data**: Extract data from uploaded documents
+- **Complete Steps**: Mark steps as completed
+
+These endpoints are designed for frontend integration and require no authentication - access is controlled via the access token provided in the session creation.
+
+## Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/public/sessions/{access_token}` | Get session state |
+| `GET` | `/public/sessions/{access_token}/workflow` | Get workflow definition |
+| `POST` | `/public/sessions/{access_token}/upload` | Upload document |
+| `POST` | `/public/sessions/{access_token}/extract` | Extract document data |
+| `POST` | `/public/sessions/{access_token}/step/{step_id}/complete` | Complete a step |
+
+## Authentication
+
+No authentication required. Access is controlled via the `access_token` path parameter.
+
+## Get Session State
+
+Retrieve the current state of a session.
+
+### Endpoint
+
+```
+GET /public/sessions/{access_token}
+```
+
+### Path Parameters
+
+<ParamFields>
+  <ParamField
+    path="access_token"
+    type="string"
+    required
+    description="The access token from the session (UUID)"
+  />
+</ParamFields>
+
+### Request Example
+
+```bash
+curl https://stg.kyc.legaltalent.ai/public/sessions/770e8400-e29b-41d4-a716-446655440002
+```
+
+### Response Format
+
+```json
+{
+  "status": "success",
+  "data": {
+    "session_id": "660e8400-e29b-41d4-a716-446655440001",
+    "workflow_id": "550e8400-e29b-41d4-a716-446655440000",
+    "status": "active",
+    "current_step_index": 1,
+    "steps": [
+      {
+        "step_id": "step_1",
+        "order": 1,
+        "name": "ID Document",
+        "type": "document_upload",
+        "status": "completed",
+        "required_documents": ["id"]
+      },
+      {
+        "step_id": "step_2",
+        "order": 2,
+        "name": "Proof of Address",
+        "type": "document_upload",
+        "status": "in_progress",
+        "required_documents": ["proof_of_address"]
+      }
+    ],
+    "expires_at": 1732278600
+  }
+}
+```
+
+## Get Workflow Definition
+
+Retrieve the workflow definition for a session.
+
+### Endpoint
+
+```
+GET /public/sessions/{access_token}/workflow
+```
+
+### Request Example
+
+```bash
+curl https://stg.kyc.legaltalent.ai/public/sessions/770e8400-e29b-41d4-a716-446655440002/workflow
+```
+
+### Response Format
+
+```json
+{
+  "status": "success",
+  "data": {
+    "workflow_id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "Basic KYC",
+    "steps": [
+      {
+        "step_id": "step_1",
+        "order": 1,
+        "name": "ID Document",
+        "type": "document_upload",
+        "required_documents": ["id"],
+        "auto_extract": true
+      },
+      {
+        "step_id": "step_2",
+        "order": 2,
+        "name": "Personal Information",
+        "type": "form_fill",
+        "custom_fields": [
+          {
+            "field_id": "full_name",
+            "name": "Full Name",
+            "type": "text",
+            "required": true
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+## Upload Document
+
+Upload a document for a session.
+
+### Endpoint
+
+```
+POST /public/sessions/{access_token}/upload
+```
+
+### Request Body Parameters
+
+<ParamFields>
+  <ParamField
+    name="document_type"
+    type="string"
+    required
+    description="Document type: 'id', 'proof_of_address', 'company_charter', or 'bank_ownership'"
+  />
+  <ParamField
+    name="file_data"
+    type="string"
+    required
+    description="Base64-encoded file data"
+  />
+  <ParamField
+    name="file_name"
+    type="string"
+    description="Original file name"
+  />
+  <ParamField
+    name="mime_type"
+    type="string"
+    description="MIME type: 'image/jpeg', 'image/png', or 'application/pdf'"
+  />
+</ParamFields>
+
+### Request Example
+
+```bash
+curl -X POST https://stg.kyc.legaltalent.ai/public/sessions/770e8400-e29b-41d4-a716-446655440002/upload \
+  -H "Content-Type: application/json" \
+  -d '{
+    "document_type": "id",
+    "file_data": "base64_encoded_file_data...",
+    "file_name": "passport.jpg",
+    "mime_type": "image/jpeg"
+  }'
+```
+
+### Response Format
+
+```json
+{
+  "status": "success",
+  "data": {
+    "document_id": "doc_1",
+    "document_type": "id",
+    "uploaded_at": "2024-11-22T10:32:00Z",
+    "s3_key": "tenant123/660e8400-e29b-41d4-a716-446655440001/doc_1.jpg"
+  }
+}
+```
+
+## Extract Document Data
+
+Extract structured data from an uploaded document.
+
+### Endpoint
+
+```
+POST /public/sessions/{access_token}/extract
+```
+
+### Request Body Parameters
+
+<ParamFields>
+  <ParamField
+    name="document_id"
+    type="string"
+    required
+    description="ID of the uploaded document"
+  />
+</ParamFields>
+
+### Request Example
+
+```bash
+curl -X POST https://stg.kyc.legaltalent.ai/public/sessions/770e8400-e29b-41d4-a716-446655440002/extract \
+  -H "Content-Type: application/json" \
+  -d '{
+    "document_id": "doc_1"
+  }'
+```
+
+### Response Format
+
+```json
+{
+  "status": "success",
+  "data": {
+    "document_id": "doc_1",
+    "extracted_data": {
+      "full_name": "John Doe",
+      "document_number": "AB1234567",
+      "date_of_birth": "1985-03-15",
+      "nationality": "US"
+    },
+    "confidence_scores": {
+      "overall": 0.95
+    }
+  }
+}
+```
+
+## Complete Step
+
+Mark a step as completed.
+
+### Endpoint
+
+```
+POST /public/sessions/{access_token}/step/{step_id}/complete
+```
+
+### Path Parameters
+
+<ParamFields>
+  <ParamField
+    path="access_token"
+    type="string"
+    required
+    description="The access token from the session"
+  />
+  <ParamField
+    path="step_id"
+    type="string"
+    required
+    description="The step ID to complete"
+  />
+</ParamFields>
+
+### Request Body Parameters
+
+<ParamFields>
+  <ParamField
+    name="form_data"
+    type="object"
+    description="Form data for form_fill steps (key-value pairs)"
+  />
+</ParamFields>
+
+### Request Example
+
+```bash
+curl -X POST https://stg.kyc.legaltalent.ai/public/sessions/770e8400-e29b-41d4-a716-446655440002/step/step_3/complete \
+  -H "Content-Type: application/json" \
+  -d '{
+    "form_data": {
+      "full_name": "John Doe",
+      "date_of_birth": "1985-03-15",
+      "address": "123 Main St"
+    }
+  }'
+```
+
+### Response Format
+
+```json
+{
+  "status": "success",
+  "data": {
+    "session_id": "660e8400-e29b-41d4-a716-446655440001",
+    "step_id": "step_3",
+    "status": "completed",
+    "current_step_index": 3,
+    "session_status": "completed",
+    "validation_triggered": true
+  }
+}
+```
+
+## Error Responses
+
+### 404 Not Found - Invalid Access Token
+
+```json Invalid Token
+{
+  "status": "error",
+  "error": "Session not found",
+  "message": "Invalid or expired access token"
+}
+```
+
+### 400 Bad Request - Session Expired
+
+```json Expired
+{
+  "status": "error",
+  "error": "Session expired",
+  "message": "Session has expired"
+}
+```
+
+### 400 Bad Request - Invalid Document Type
+
+```json Invalid Document Type
+{
+  "status": "error",
+  "error": "Invalid document type",
+  "message": "Document type 'invalid' is not supported for this step"
+}
+```
+
+## Status Codes
+
+| Code | Description |
+|------|-------------|
+| 200 | Success |
+| 400 | Bad Request - Invalid parameters or expired session |
+| 404 | Not Found - Invalid access token |
+| 500 | Internal Server Error |
+
+## Usage Examples
+
+### JavaScript/Frontend Example
+
+```javascript
+const accessToken = "770e8400-e29b-41d4-a716-446655440002";
+const baseUrl = "https://stg.kyc.legaltalent.ai/public/sessions";
+
+// Get session state
+async function getSessionState() {
+  const response = await fetch(`${baseUrl}/${accessToken}`);
+  const data = await response.json();
+  return data.data;
+}
+
+// Upload document
+async function uploadDocument(file, documentType) {
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const base64Data = reader.result.split(',')[1];
+    
+    const response = await fetch(`${baseUrl}/${accessToken}/upload`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        document_type: documentType,
+        file_data: base64Data,
+        file_name: file.name,
+        mime_type: file.type
+      })
+    });
+    
+    const data = await response.json();
+    return data.data;
+  };
+  reader.readAsDataURL(file);
+}
+
+// Complete step
+async function completeStep(stepId, formData) {
+  const response = await fetch(
+    `${baseUrl}/${accessToken}/step/${stepId}/complete`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ form_data: formData })
+    }
+  );
+  
+  const data = await response.json();
+  return data.data;
+}
+```
+
+## Best Practices
+
+- **Security**: Access tokens are UUIDs - treat them as sensitive
+- **Expiration**: Check session expiration before allowing user actions
+- **Error Handling**: Handle expired sessions gracefully
+- **File Upload**: Validate file types and sizes client-side before upload
+- **Progress Tracking**: Use session state to show progress to users
+
+## Integration Tips
+
+1. **Frontend Integration**: These endpoints are designed for frontend use
+2. **CORS**: CORS is enabled for public endpoints
+3. **File Upload**: Use base64 encoding for file uploads
+4. **Progress Display**: Use `current_step_index` to show progress
+5. **Validation**: Validation runs automatically when all steps are completed
+

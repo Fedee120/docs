@@ -1,0 +1,573 @@
+---
+title: 'Tenant Management'
+api: 'GET /kyc/tenants/me'
+---
+
+Manage tenant configuration, including notification channels, keywords, industries, and billing settings. Tenant endpoints allow both self-service management (`/me` endpoints) and administrative management (`/{tenant_id}` endpoints).
+
+## Overview
+
+Tenant management endpoints provide:
+
+- **Self-Service**: Tenants can manage their own configuration via `/me` endpoints
+- **Administrative**: Admins can manage any tenant via `/{tenant_id}` endpoints
+- **Configuration Areas**: Notification channels, keywords, industries, billing
+- **Access Control**: Different permissions for different operations
+
+## Endpoints Overview
+
+### Self-Service Endpoints (`/me`)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/kyc/tenants/me` | Get current tenant's configuration |
+| `PATCH` | `/kyc/tenants/me/notification-channels` | Update notification channels |
+| `GET` | `/kyc/tenants/me/keywords` | Get keywords |
+| `PATCH` | `/kyc/tenants/me/keywords` | Update keywords |
+| `GET` | `/kyc/tenants/me/industries` | Get industries |
+| `PATCH` | `/kyc/tenants/me/industries` | Update industries |
+
+### Administrative Endpoints (`/{tenant_id}`)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/kyc/tenants` | Create new tenant (admin only) |
+| `GET` | `/kyc/tenants/{tenant_id}` | Get tenant details (admin only) |
+| `PUT` | `/kyc/tenants/{tenant_id}` | Update tenant (full update, admin only) |
+| `DELETE` | `/kyc/tenants/{tenant_id}` | Delete tenant (admin only) |
+| `PATCH` | `/kyc/tenants/{tenant_id}/notification-channels` | Update notification channels |
+| `PATCH` | `/kyc/tenants/{tenant_id}/billing` | Update billing configuration |
+| `GET` | `/kyc/tenants/{tenant_id}/keywords` | Get keywords |
+| `PATCH` | `/kyc/tenants/{tenant_id}/keywords` | Update keywords |
+| `GET` | `/kyc/tenants/{tenant_id}/industries` | Get industries |
+| `PATCH` | `/kyc/tenants/{tenant_id}/industries` | Update industries |
+
+## Authentication
+
+- **Self-Service Endpoints**: Require `tenant:read` or `tenant:manage` permissions
+- **Administrative Endpoints**: Require `tenant:manage` permission
+- Include your Bearer token in the Authorization header
+
+## Get Current Tenant Configuration
+
+Retrieve the current tenant's own configuration.
+
+### Endpoint
+
+```
+GET /kyc/tenants/me
+```
+
+### Request Example
+
+```bash
+curl https://stg.kyc.legaltalent.ai/kyc/tenants/me \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Response Format
+
+```json
+{
+  "status": "success",
+  "data": {
+    "tenant_id": "tenant123",
+    "name": "My Tenant",
+    "status": "active",
+    "notification_config": {
+      "email": "alerts@example.com",
+      "webhook_url": "https://example.com/webhooks/kyc"
+    },
+    "keywords": [
+      {
+        "keyword": "gambling",
+        "enabled": true
+      }
+    ],
+    "industries": [
+      {
+        "industry": "financial_services",
+        "allowed": true
+      }
+    ],
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-11-22T10:30:00Z"
+  }
+}
+```
+
+## Create Tenant
+
+Create a new tenant (admin only).
+
+### Endpoint
+
+```
+POST /kyc/tenants
+```
+
+### Request Body Parameters
+
+<ParamFields>
+  <ParamField
+    name="tenant_id"
+    type="string"
+    required
+    description="Unique tenant identifier"
+  />
+  <ParamField
+    name="name"
+    type="string"
+    required
+    description="Tenant name"
+  />
+  <ParamField
+    name="status"
+    type="string"
+    description="Status: 'active', 'suspended', or 'inactive' (default: 'active')"
+  />
+  <ParamField
+    name="notification_config"
+    type="object"
+    description="Notification configuration"
+  />
+  <ParamField
+    name="keywords"
+    type="array"
+    description="Array of keyword objects"
+  />
+  <ParamField
+    name="industries"
+    type="array"
+    description="Array of industry objects"
+  />
+  <ParamField
+    name="billing_config"
+    type="object"
+    description="Billing configuration (admin only)"
+  />
+</ParamFields>
+
+### Request Example
+
+```bash
+curl -X POST https://stg.kyc.legaltalent.ai/kyc/tenants \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tenant_id": "new-tenant",
+    "name": "New Tenant",
+    "status": "active",
+    "notification_config": {
+      "email": "admin@newtenant.com"
+    }
+  }'
+```
+
+## Update Notification Channels
+
+Update notification channels for the current tenant or a specific tenant.
+
+### Endpoint (Self-Service)
+
+```
+PATCH /kyc/tenants/me/notification-channels
+```
+
+### Endpoint (Admin)
+
+```
+PATCH /kyc/tenants/{tenant_id}/notification-channels
+```
+
+### Request Body Parameters
+
+<ParamFields>
+  <ParamField
+    name="email"
+    type="string"
+    description="Email address for notifications"
+  />
+  <ParamField
+    name="webhook_url"
+    type="string"
+    description="Webhook URL for notifications"
+  />
+</ParamFields>
+
+### Request Example
+
+```bash
+curl -X PATCH https://stg.kyc.legaltalent.ai/kyc/tenants/me/notification-channels \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "new-alerts@example.com",
+    "webhook_url": "https://example.com/webhooks/kyc"
+  }'
+```
+
+## Manage Keywords
+
+Keywords are used for website blacklist filtering. Manage keywords for the current tenant or a specific tenant.
+
+### Get Keywords
+
+#### Endpoint (Self-Service)
+
+```
+GET /kyc/tenants/me/keywords
+```
+
+#### Endpoint (Admin)
+
+```
+GET /kyc/tenants/{tenant_id}/keywords
+```
+
+#### Request Example
+
+```bash
+curl https://stg.kyc.legaltalent.ai/kyc/tenants/me/keywords \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+#### Response Format
+
+```json
+{
+  "status": "success",
+  "data": {
+    "keywords": [
+      {
+        "keyword": "gambling",
+        "enabled": true
+      },
+      {
+        "keyword": "crypto",
+        "enabled": false
+      },
+      {
+        "keyword": "casino",
+        "enabled": true
+      }
+    ]
+  }
+}
+```
+
+### Update Keywords
+
+#### Endpoint (Self-Service)
+
+```
+PATCH /kyc/tenants/me/keywords
+```
+
+#### Endpoint (Admin)
+
+```
+PATCH /kyc/tenants/{tenant_id}/keywords
+```
+
+#### Request Body Parameters
+
+<ParamFields>
+  <ParamField
+    name="keywords"
+    type="array"
+    required
+    description="Array of keyword objects (replaces entire list)"
+  >
+    <ParamField
+      name="keyword"
+      type="string"
+      required
+      description="Keyword text"
+    />
+    <ParamField
+      name="enabled"
+      type="boolean"
+      required
+      description="Whether the keyword is enabled"
+    />
+  </ParamField>
+</ParamFields>
+
+#### Request Example
+
+```bash
+curl -X PATCH https://stg.kyc.legaltalent.ai/kyc/tenants/me/keywords \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "keywords": [
+      {
+        "keyword": "gambling",
+        "enabled": true
+      },
+      {
+        "keyword": "crypto",
+        "enabled": false
+      },
+      {
+        "keyword": "betting",
+        "enabled": true
+      }
+    ]
+  }'
+```
+
+## Manage Industries
+
+Industries define which industries are allowed or blocked for the tenant. Manage industries for the current tenant or a specific tenant.
+
+### Get Industries
+
+#### Endpoint (Self-Service)
+
+```
+GET /kyc/tenants/me/industries
+```
+
+#### Endpoint (Admin)
+
+```
+GET /kyc/tenants/{tenant_id}/industries
+```
+
+#### Request Example
+
+```bash
+curl https://stg.kyc.legaltalent.ai/kyc/tenants/me/industries \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+#### Response Format
+
+```json
+{
+  "status": "success",
+  "data": {
+    "industries": [
+      {
+        "industry": "financial_services",
+        "allowed": true
+      },
+      {
+        "industry": "gambling",
+        "allowed": false
+      },
+      {
+        "industry": "cryptocurrency",
+        "allowed": true
+      }
+    ]
+  }
+}
+```
+
+### Update Industries
+
+#### Endpoint (Self-Service)
+
+```
+PATCH /kyc/tenants/me/industries
+```
+
+#### Endpoint (Admin)
+
+```
+PATCH /kyc/tenants/{tenant_id}/industries
+```
+
+#### Request Body Parameters
+
+<ParamFields>
+  <ParamField
+    name="industries"
+    type="array"
+    required
+    description="Array of industry objects (replaces entire list)"
+  >
+    <ParamField
+      name="industry"
+      type="string"
+      required
+      description="Industry identifier"
+    />
+    <ParamField
+      name="allowed"
+      type="boolean"
+      required
+      description="Whether the industry is allowed"
+    />
+  </ParamField>
+</ParamFields>
+
+#### Request Example
+
+```bash
+curl -X PATCH https://stg.kyc.legaltalent.ai/kyc/tenants/me/industries \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "industries": [
+      {
+        "industry": "financial_services",
+        "allowed": true
+      },
+      {
+        "industry": "gambling",
+        "allowed": false
+      },
+      {
+        "industry": "healthcare",
+        "allowed": true
+      }
+    ]
+  }'
+```
+
+## Update Billing Configuration
+
+Update billing configuration for a tenant (admin only).
+
+### Endpoint
+
+```
+PATCH /kyc/tenants/{tenant_id}/billing
+```
+
+### Request Body Parameters
+
+<ParamFields>
+  <ParamField
+    name="plan"
+    type="string"
+    description="Billing plan name"
+  />
+  <ParamField
+    name="usage_alerts"
+    type="object"
+    description="Usage alert configuration"
+  >
+    <ParamField
+      name="enabled"
+      type="boolean"
+      description="Whether usage alerts are enabled"
+    />
+    <ParamField
+      name="threshold_percentage"
+      type="integer"
+      description="Alert threshold percentage (0-100)"
+    />
+  </ParamField>
+</ParamFields>
+
+### Request Example
+
+```bash
+curl -X PATCH https://stg.kyc.legaltalent.ai/kyc/tenants/tenant123/billing \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "plan": "enterprise",
+    "usage_alerts": {
+      "enabled": true,
+      "threshold_percentage": 80
+    }
+  }'
+```
+
+## Update Tenant (Full Update)
+
+Update a tenant with full replacement (admin only).
+
+### Endpoint
+
+```
+PUT /kyc/tenants/{tenant_id}
+```
+
+### Request Body
+
+Same as create tenant, but all fields are optional (only include fields you want to update).
+
+### Request Example
+
+```bash
+curl -X PUT https://stg.kyc.legaltalent.ai/kyc/tenants/tenant123 \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Updated Tenant Name",
+    "status": "active"
+  }'
+```
+
+## Delete Tenant
+
+Delete a tenant (admin only).
+
+### Endpoint
+
+```
+DELETE /kyc/tenants/{tenant_id}
+```
+
+### Request Example
+
+```bash
+curl -X DELETE https://stg.kyc.legaltalent.ai/kyc/tenants/tenant123 \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Response Format
+
+```json
+{
+  "status": "success",
+  "message": "Tenant deleted successfully"
+}
+```
+
+## Permissions
+
+| Permission | Endpoints |
+|------------|-----------|
+| `tenant:read` | GET `/kyc/tenants/me` |
+| `tenant:manage` | All tenant endpoints (admin) |
+| `keywords:read` | GET `/kyc/tenants/me/keywords`, GET `/kyc/tenants/{tenant_id}/keywords` |
+| `keywords:update` | PATCH `/kyc/tenants/me/keywords`, PATCH `/kyc/tenants/{tenant_id}/keywords` |
+| `industries:read` | GET `/kyc/tenants/me/industries`, GET `/kyc/tenants/{tenant_id}/industries` |
+| `industries:update` | PATCH `/kyc/tenants/me/industries`, PATCH `/kyc/tenants/{tenant_id}/industries` |
+
+## Status Codes
+
+| Code | Description |
+|------|-------------|
+| 200 | Success |
+| 201 | Created - Tenant created successfully |
+| 400 | Bad Request - Invalid parameters |
+| 401 | Unauthorized - Missing or invalid token |
+| 403 | Forbidden - Insufficient permissions |
+| 404 | Not Found - Tenant not found |
+| 409 | Conflict - Tenant already exists |
+| 500 | Internal Server Error |
+
+## Best Practices
+
+- **Self-Service**: Use `/me` endpoints for tenant self-management
+- **Administrative**: Use `/{tenant_id}` endpoints for admin operations
+- **Keyword Management**: Keywords are replaced entirely on update - include all keywords
+- **Industry Management**: Industries are replaced entirely on update - include all industries
+- **Notification Channels**: Update notification channels to ensure alerts are received
+
+## Integration Tips
+
+1. **Tenant ID**: The `/me` endpoints automatically use the tenant ID from your token
+2. **List Replacement**: Keyword and industry updates replace the entire list
+3. **Configuration Management**: Store tenant configuration for audit purposes
+4. **Error Handling**: Handle permission errors appropriately based on user role
+

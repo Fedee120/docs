@@ -1,0 +1,460 @@
+---
+title: 'Document Verification'
+api: 'POST /kyc/documents/{type}'
+---
+
+Extract and verify data from identity documents, proof of address, company charters, and bank ownership documents using AI-powered document processing.
+
+## Overview
+
+The document verification endpoints use AI (LLM) to extract structured data from uploaded document images. Supported document types:
+
+- **ID Documents**: Passports, national IDs, driver's licenses
+- **Proof of Address**: Utility bills, bank statements, government letters
+- **Company Charters**: Corporate registration documents
+- **Bank Ownership**: Bank account ownership verification documents
+
+## Endpoints
+
+| Document Type | Endpoint | Description |
+|---------------|----------|-------------|
+| ID Document | `POST /kyc/documents/id` | Extract data from ID documents |
+| Proof of Address | `POST /kyc/documents/proof-of-address` | Extract data from address proof documents |
+| Company Charter | `POST /kyc/documents/company-charter` | Extract data from company charter documents |
+| Bank Ownership | `POST /kyc/documents/bank-ownership` | Extract data from bank ownership documents |
+
+## Authentication
+
+Requires `kyc:create` permission. Include your Bearer token in the Authorization header.
+
+## Request Body Parameters
+
+<ParamFields>
+  <ParamField
+    name="images"
+    type="array"
+    required
+    description="Array of document image objects"
+  >
+    <ParamField
+      name="data"
+      type="string"
+      required
+      description="Base64-encoded image data"
+    />
+    <ParamField
+      name="mime_type"
+      type="string"
+      required
+      description="MIME type: 'image/jpeg', 'image/png', 'application/pdf'"
+    />
+  </ParamField>
+  <ParamField
+    name="provider"
+    type="string"
+    description="LLM provider: 'bedrock' (default) or 'openai'"
+  />
+  <ParamField
+    name="model"
+    type="string"
+    description="Model identifier (for OpenAI provider)"
+  />
+</ParamFields>
+
+## Supported Image Formats
+
+- **JPEG** (`image/jpeg`)
+- **PNG** (`image/png`)
+- **PDF** (`application/pdf`)
+
+## Request Example
+
+### ID Document
+
+```bash
+curl -X POST https://stg.kyc.legaltalent.ai/kyc/documents/id \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "images": [
+      {
+        "data": "base64_encoded_image_data...",
+        "mime_type": "image/jpeg"
+      }
+    ]
+  }'
+```
+
+### Proof of Address
+
+```bash
+curl -X POST https://stg.kyc.legaltalent.ai/kyc/documents/proof-of-address \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "images": [
+      {
+        "data": "base64_encoded_image_data...",
+        "mime_type": "application/pdf"
+      }
+    ]
+  }'
+```
+
+## Response Format
+
+### Success Response - ID Document
+
+```json
+{
+  "status": "success",
+  "verification_id": "550e8400-e29b-41d4-a716-446655440000",
+  "document_type": "id_document",
+  "extracted_data": {
+    "full_name": "John Doe",
+    "document_number": "AB1234567",
+    "document_type": "Passport",
+    "nationality": "US",
+    "date_of_birth": "1985-03-15",
+    "expiry_date": "2030-03-15",
+    "issue_date": "2020-03-15",
+    "issuing_authority": "United States Department of State"
+  },
+  "confidence_scores": {
+    "overall": 0.95,
+    "full_name": 0.98,
+    "document_number": 0.99,
+    "date_of_birth": 0.97
+  },
+  "processing_time_ms": 3200,
+  "timestamp": "2024-11-22T10:30:00Z"
+}
+```
+
+### Success Response - Proof of Address
+
+```json
+{
+  "status": "success",
+  "verification_id": "660e8400-e29b-41d4-a716-446655440001",
+  "document_type": "proof_of_address",
+  "extracted_data": {
+    "address": "123 Main Street, Apt 4B",
+    "city": "New York",
+    "state": "NY",
+    "postal_code": "10001",
+    "country": "US",
+    "document_date": "2024-10-15",
+    "utility_type": "Electric Bill",
+    "account_holder_name": "John Doe"
+  },
+  "confidence_scores": {
+    "overall": 0.92,
+    "address": 0.95,
+    "document_date": 0.90
+  },
+  "processing_time_ms": 2800,
+  "timestamp": "2024-11-22T10:30:00Z"
+}
+```
+
+### Success Response - Company Charter
+
+```json
+{
+  "status": "success",
+  "verification_id": "770e8400-e29b-41d4-a716-446655440002",
+  "document_type": "company_charter",
+  "extracted_data": {
+    "company_name": "Example Corp",
+    "registration_number": "12345678",
+    "incorporation_date": "2020-01-15",
+    "registered_address": "456 Business Ave, Suite 100",
+    "city": "San Francisco",
+    "state": "CA",
+    "country": "US",
+    "legal_form": "Corporation",
+    "authorized_capital": "1000000",
+    "directors": [
+      {
+        "name": "John Doe",
+        "role": "CEO"
+      }
+    ]
+  },
+  "confidence_scores": {
+    "overall": 0.88,
+    "company_name": 0.95,
+    "registration_number": 0.92
+  },
+  "processing_time_ms": 4500,
+  "timestamp": "2024-11-22T10:30:00Z"
+}
+```
+
+### Success Response - Bank Ownership
+
+```json
+{
+  "status": "success",
+  "verification_id": "880e8400-e29b-41d4-a716-446655440003",
+  "document_type": "bank_ownership",
+  "extracted_data": {
+    "account_holder_name": "John Doe",
+    "account_number": "****1234",
+    "bank_name": "Example Bank",
+    "account_type": "Checking",
+    "routing_number": "123456789",
+    "statement_date": "2024-10-31",
+    "address": "123 Main Street, New York, NY 10001"
+  },
+  "confidence_scores": {
+    "overall": 0.90,
+    "account_holder_name": 0.94,
+    "bank_name": 0.92
+  },
+  "processing_time_ms": 3500,
+  "timestamp": "2024-11-22T10:30:00Z"
+}
+```
+
+## Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `status` | string | Always `"success"` when extraction completes |
+| `verification_id` | string | Unique identifier for this verification |
+| `document_type` | string | Type of document processed |
+| `extracted_data` | object | Extracted structured data (varies by document type) |
+| `confidence_scores` | object | Confidence scores for extracted fields |
+| `processing_time_ms` | integer | Total processing time in milliseconds |
+| `timestamp` | string | ISO 8601 timestamp of the extraction |
+
+## Extracted Data Fields
+
+### ID Document Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `full_name` | string | Full name from document |
+| `document_number` | string | Document ID number |
+| `document_type` | string | Type of ID (Passport, Driver's License, etc.) |
+| `nationality` | string | Nationality/country code |
+| `date_of_birth` | string | Date of birth (YYYY-MM-DD) |
+| `expiry_date` | string | Expiry date (YYYY-MM-DD) |
+| `issue_date` | string | Issue date (YYYY-MM-DD) |
+| `issuing_authority` | string | Authority that issued the document |
+
+### Proof of Address Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `address` | string | Full address |
+| `city` | string | City name |
+| `state` | string | State/province |
+| `postal_code` | string | Postal/ZIP code |
+| `country` | string | Country code |
+| `document_date` | string | Date on document (YYYY-MM-DD) |
+| `utility_type` | string | Type of utility (if applicable) |
+| `account_holder_name` | string | Name on the account |
+
+### Company Charter Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `company_name` | string | Registered company name |
+| `registration_number` | string | Company registration number |
+| `incorporation_date` | string | Date of incorporation (YYYY-MM-DD) |
+| `registered_address` | string | Registered business address |
+| `city` | string | City |
+| `state` | string | State/province |
+| `country` | string | Country code |
+| `legal_form` | string | Legal form (Corporation, LLC, etc.) |
+| `authorized_capital` | string | Authorized capital amount |
+| `directors` | array | Array of director objects |
+
+### Bank Ownership Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `account_holder_name` | string | Name on the account |
+| `account_number` | string | Account number (may be masked) |
+| `bank_name` | string | Bank name |
+| `account_type` | string | Type of account (Checking, Savings, etc.) |
+| `routing_number` | string | Bank routing number |
+| `statement_date` | string | Statement date (YYYY-MM-DD) |
+| `address` | string | Address associated with account |
+
+## Error Responses
+
+### 400 Bad Request - Invalid Image Format
+
+```json
+{
+  "error": "Invalid image format",
+  "message": "Unsupported MIME type. Supported types: image/jpeg, image/png, application/pdf"
+}
+```
+
+### 400 Bad Request - Missing Images
+
+```json
+{
+  "error": "Missing required parameter: images"
+}
+```
+
+### 400 Bad Request - Invalid Base64
+
+```json
+{
+  "error": "Invalid base64 encoding",
+  "message": "Failed to decode image data"
+}
+```
+
+### 500 Internal Server Error - Processing Failed
+
+```json
+{
+  "error": "Error processing document",
+  "message": "Failed to extract data from document"
+}
+```
+
+## Status Codes
+
+| Code | Description |
+|------|-------------|
+| 200 | Success - Document processed and data extracted |
+| 400 | Bad Request - Invalid parameters or image format |
+| 401 | Unauthorized - Missing or invalid token |
+| 403 | Forbidden - Insufficient permissions |
+| 500 | Internal Server Error |
+
+## Usage Examples
+
+### Python Example
+
+```python
+import requests
+import base64
+
+token = "YOUR_TOKEN"
+
+# Read image file and encode as base64
+with open("id_document.jpg", "rb") as f:
+    image_data = base64.b64encode(f.read()).decode('utf-8')
+
+response = requests.post(
+    "https://stg.kyc.legaltalent.ai/kyc/documents/id",
+    headers={
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    },
+    json={
+        "images": [
+            {
+                "data": image_data,
+                "mime_type": "image/jpeg"
+            }
+        ]
+    }
+)
+
+if response.status_code == 200:
+    data = response.json()
+    print(f"Verification ID: {data['verification_id']}")
+    print(f"Extracted Name: {data['extracted_data']['full_name']}")
+    print(f"Confidence: {data['confidence_scores']['overall']}")
+else:
+    print(f"Error: {response.json()}")
+```
+
+### JavaScript Example
+
+```javascript
+const token = "YOUR_TOKEN";
+const fs = require('fs');
+
+async function extractDocumentData(filePath, documentType) {
+  // Read file and encode as base64
+  const fileBuffer = fs.readFileSync(filePath);
+  const base64Data = fileBuffer.toString('base64');
+  
+  // Determine MIME type from file extension
+  const mimeType = filePath.endsWith('.pdf') 
+    ? 'application/pdf' 
+    : filePath.endsWith('.png') 
+    ? 'image/png' 
+    : 'image/jpeg';
+  
+  const endpoint = `https://stg.kyc.legaltalent.ai/kyc/documents/${documentType}`;
+  
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      images: [
+        {
+          data: base64Data,
+          mime_type: mimeType
+        }
+      ]
+    })
+  });
+  
+  const data = await response.json();
+  
+  if (response.ok) {
+    console.log(`Verification ID: ${data.verification_id}`);
+    console.log(`Extracted Data:`, data.extracted_data);
+    console.log(`Confidence: ${data.confidence_scores.overall}`);
+    return data;
+  } else {
+    console.error("Error:", data.error);
+    throw new Error(data.error);
+  }
+}
+```
+
+## Best Practices
+
+- **Image Quality**: Use high-quality images (minimum 300 DPI) for best results
+- **File Size**: Keep images under 10MB for optimal performance
+- **Multiple Pages**: For multi-page documents (PDFs), include all pages in the images array
+- **Confidence Scores**: Review confidence scores before using extracted data
+- **Manual Verification**: Always verify extracted data manually for critical operations
+- **Error Handling**: Implement proper error handling for processing failures
+
+## Performance
+
+- **Typical Response Time**: 2-5 seconds per document
+- **Rate Limits**: Subject to API rate limiting (1,000 requests per 5 minutes)
+- **File Size Limits**: Maximum 10MB per image
+- **Concurrent Processing**: Process multiple documents in separate requests
+
+## LLM Provider Options
+
+### AWS Bedrock (Default)
+
+- **Provider**: `"bedrock"` (default)
+- **Model**: Uses default Bedrock model
+- **Use Case**: Production deployments on AWS
+
+### OpenAI
+
+- **Provider**: `"openai"`
+- **Model**: Specify model (e.g., `"gpt-4o"`)
+- **Use Case**: High-precision extraction, specific model requirements
+
+## Integration Tips
+
+1. **Pre-processing**: Ensure images are properly oriented and well-lit
+2. **Batch Processing**: Process multiple documents in separate requests
+3. **Caching**: Consider caching verification IDs for reference
+4. **Validation**: Validate extracted data against business rules before use
+

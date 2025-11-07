@@ -79,6 +79,21 @@ Each token is associated with specific permissions following the `resource:actio
 | `/kyc/{job_id}` | `GET` | `kyc:read` | View KYC check results |
 | `/exports/{jobId}` | `GET` | `kyc:export` | Export KYC results (PDF) |
 | `/kyc/adverse-media` | `POST` | `kyc:create` | Perform adverse media check |
+| `/kyc/web-validation` | `POST` | `kyc:create` | Validate website URLs |
+| `/kyc/crypto` | `POST` | `kyc:create` | Check cryptocurrency wallets |
+| `/kyc/documents/{type}` | `POST` | `kyc:create` | Extract document data |
+| `/kyc/jobs` | `POST` | `kyc:create` | Create batch job |
+| `/kyc/jobs/{job_id}` | `GET` | `kyc:read` | Get batch job status |
+| `/kyc/workflows` | `POST` | `kyc:create` | Create workflow |
+| `/kyc/workflows` | `GET` | `kyc:read` | List workflows |
+| `/kyc/workflows/{id}` | `GET` | `kyc:read` | Get workflow details |
+| `/kyc/workflows/{id}` | `PUT` | `kyc:create` | Update workflow |
+| `/kyc/workflows/{id}` | `DELETE` | `kyc:create` | Delete workflow |
+| `/kyc/sessions` | `POST` | `kyc:create` | Create session |
+| `/kyc/sessions` | `GET` | `kyc:read` | List sessions |
+| `/kyc/sessions/{id}` | `GET` | `kyc:read` | Get session details |
+| `/kyc/sessions/{id}` | `PATCH` | `kyc:create` | Update session status |
+| `/kyc/sessions/{id}` | `DELETE` | `kyc:create` | Delete session |
 
 ### Watchlist Operations
 
@@ -98,6 +113,29 @@ Each token is associated with specific permissions following the `resource:actio
 | Endpoint | Method | Required Permission | Description |
 |----------|--------|-------------------|-------------|
 | `/kyc/usage` | `GET` | `usage:read` | View usage metrics |
+| `/health` | `GET` | None | Basic health check (public) |
+| `/health/ready` | `GET` | `health:readiness_check` | Readiness check with dependencies |
+
+### Tenant Management
+
+| Endpoint | Method | Required Permission | Description |
+|----------|--------|-------------------|-------------|
+| `/kyc/tenants` | `POST` | `tenant:manage` | Create tenant (admin) |
+| `/kyc/tenants/me` | `GET` | `tenant:read` | Get own tenant configuration |
+| `/kyc/tenants/{id}` | `GET` | `tenant:manage` | Get tenant details (admin) |
+| `/kyc/tenants/{id}` | `PUT` | `tenant:manage` | Update tenant (admin) |
+| `/kyc/tenants/{id}` | `DELETE` | `tenant:manage` | Delete tenant (admin) |
+| `/kyc/tenants/me/notification-channels` | `PATCH` | `tenant:read` | Update own notification channels |
+| `/kyc/tenants/{id}/notification-channels` | `PATCH` | `tenant:manage` | Update notification channels (admin) |
+| `/kyc/tenants/me/keywords` | `GET` | `keywords:read` | Get own keywords |
+| `/kyc/tenants/me/keywords` | `PATCH` | `keywords:update` | Update own keywords |
+| `/kyc/tenants/{id}/keywords` | `GET` | `keywords:read` | Get keywords (admin) |
+| `/kyc/tenants/{id}/keywords` | `PATCH` | `keywords:update` | Update keywords (admin) |
+| `/kyc/tenants/me/industries` | `GET` | `industries:read` | Get own industries |
+| `/kyc/tenants/me/industries` | `PATCH` | `industries:update` | Update own industries |
+| `/kyc/tenants/{id}/industries` | `GET` | `industries:read` | Get industries (admin) |
+| `/kyc/tenants/{id}/industries` | `PATCH` | `industries:update` | Update industries (admin) |
+| `/kyc/tenants/{id}/billing` | `PATCH` | `tenant:manage` | Update billing (admin) |
 
 ## Error Responses
 

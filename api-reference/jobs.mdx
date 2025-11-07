@@ -1,0 +1,465 @@
+---
+title: 'Batch Jobs'
+api: 'POST /kyc/jobs'
+---
+
+Create and manage batch KYC validation jobs for processing multiple entities efficiently. Batch jobs allow you to submit large numbers of entities for validation and track their progress asynchronously.
+
+## Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/kyc/jobs` | Create a new batch job |
+| `GET` | `/kyc/jobs/{job_id}` | Get job status and results |
+
+## Authentication
+
+Requires `kyc:create` permission for creating jobs and `kyc:read` permission for retrieving job status. Include your Bearer token in the Authorization header.
+
+## Create Batch Job
+
+Submit multiple entities for KYC validation in a single batch job.
+
+### Endpoint
+
+```
+POST /kyc/jobs
+```
+
+### Request Body Parameters
+
+<ParamFields>
+  <ParamField
+    name="entities"
+    type="array"
+    required
+    description="Array of entity objects to validate (maximum 10,000 entities per job)"
+  >
+    <ParamField
+      name="entity_id"
+      type="string"
+      description="Optional unique identifier for this entity"
+    />
+    <ParamField
+      name="subject"
+      type="object"
+      required
+      description="Entity information to check against watchlists"
+    >
+      <ParamField
+        name="full_name"
+        type="string"
+        required
+        description="Full name of the entity"
+      />
+      <ParamField
+        name="document_id"
+        type="string"
+        description="Document ID (passport, ID card, etc.)"
+      />
+      <ParamField
+        name="document_type"
+        type="string"
+        description="Type of document (e.g., 'Passport', 'CI', 'DNI')"
+      />
+      <ParamField
+        name="nationality"
+        type="string"
+        description="Country code (e.g., 'US', 'UY')"
+      />
+      <ParamField
+        name="birth_date"
+        type="string"
+        description="Birth date in ISO format (YYYY-MM-DD)"
+      />
+      <ParamField
+        name="wallet_address"
+        type="string"
+        description="Cryptocurrency wallet address"
+      />
+    </ParamField>
+    <ParamField
+      name="lists"
+      type="array"
+      description="Array of list names to check against (default: all available lists)"
+    />
+    <ParamField
+      name="search_type"
+      type="string"
+      description="Matching strategy: 'exact', 'fuzzy', 'token', 'composite', or 'llm_enhanced' (default: 'composite')"
+    />
+  </ParamField>
+</ParamFields>
+
+### Request Example
+
+```bash
+curl -X POST https://stg.kyc.legaltalent.ai/kyc/jobs \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "entities": [
+      {
+        "entity_id": "e1",
+        "subject": {
+          "full_name": "John Doe",
+          "nationality": "US",
+          "birth_date": "1985-03-15"
+        },
+        "lists": ["ofac", "un"],
+        "search_type": "composite"
+      },
+      {
+        "entity_id": "e2",
+        "subject": {
+          "full_name": "Jane Smith",
+          "document_id": "12345678",
+          "document_type": "CI",
+          "nationality": "UY"
+        },
+        "lists": ["senaclaft_uy"]
+      }
+    ]
+  }'
+```
+
+### Response Format
+
+```json
+{
+  "status": "success",
+  "job_id": "550e8400-e29b-41d4-a716-446655440000",
+  "total_entities": 2,
+  "status": "processing",
+  "created_at": "2024-11-22T10:30:00Z",
+  "estimated_completion": "2024-11-22T10:35:00Z"
+}
+```
+
+### Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `status` | string | Always `"success"` when job is created |
+| `job_id` | string | Unique identifier for the batch job |
+| `total_entities` | integer | Number of entities in the batch |
+| `status` | string | Job status: `"processing"`, `"completed"`, `"failed"` |
+| `created_at` | string | ISO 8601 timestamp when job was created |
+| `estimated_completion` | string | Estimated completion time (ISO 8601) |
+
+## Get Job Status
+
+Retrieve the status and results of a batch job.
+
+### Endpoint
+
+```
+GET /kyc/jobs/{job_id}
+```
+
+### Path Parameters
+
+<ParamFields>
+  <ParamField
+    path="job_id"
+    type="string"
+    required
+    description="The job ID returned when creating the batch job"
+  />
+</ParamFields>
+
+### Request Example
+
+```bash
+curl https://stg.kyc.legaltalent.ai/kyc/jobs/550e8400-e29b-41d4-a716-446655440000 \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Response Format - Processing
+
+```json
+{
+  "status": "success",
+  "job_id": "550e8400-e29b-41d4-a716-446655440000",
+  "job_status": "processing",
+  "total_entities": 2,
+  "processed_entities": 1,
+  "completed_entities": 1,
+  "failed_entities": 0,
+  "matches_found": 0,
+  "created_at": "2024-11-22T10:30:00Z",
+  "updated_at": "2024-11-22T10:32:00Z",
+  "estimated_completion": "2024-11-22T10:35:00Z"
+}
+```
+
+### Response Format - Completed
+
+```json
+{
+  "status": "success",
+  "job_id": "550e8400-e29b-41d4-a716-446655440000",
+  "job_status": "completed",
+  "total_entities": 2,
+  "processed_entities": 2,
+  "completed_entities": 2,
+  "failed_entities": 0,
+  "matches_found": 1,
+  "created_at": "2024-11-22T10:30:00Z",
+  "completed_at": "2024-11-22T10:34:00Z",
+  "results": [
+    {
+      "entity_id": "e1",
+      "status": "completed",
+      "is_match": false,
+      "match_count": 0,
+      "matches": []
+    },
+    {
+      "entity_id": "e2",
+      "status": "completed",
+      "is_match": true,
+      "match_count": 1,
+      "matches": [
+        {
+          "entity_id": "12345",
+          "name": "Jane Smith",
+          "confidence_score": 0.95,
+          "match_type": "composite",
+          "source_list": "senaclaft_uy",
+          "programs": ["PEP"]
+        }
+      ]
+    }
+  ]
+}
+```
+
+### Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `status` | string | Response status: `"success"` |
+| `job_id` | string | Unique identifier for the batch job |
+| `job_status` | string | Job status: `"processing"`, `"completed"`, `"failed"` |
+| `total_entities` | integer | Total number of entities in the batch |
+| `processed_entities` | integer | Number of entities processed so far |
+| `completed_entities` | integer | Number of entities successfully completed |
+| `failed_entities` | integer | Number of entities that failed processing |
+| `matches_found` | integer | Total number of matches found across all entities |
+| `created_at` | string | ISO 8601 timestamp when job was created |
+| `completed_at` | string | ISO 8601 timestamp when job completed (if completed) |
+| `updated_at` | string | ISO 8601 timestamp of last update |
+| `estimated_completion` | string | Estimated completion time (if processing) |
+| `results` | array | Array of entity results (only present when completed) |
+
+### Entity Result Object
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `entity_id` | string | Entity identifier (if provided) |
+| `status` | string | Entity processing status |
+| `is_match` | boolean | Whether any matches were found |
+| `match_count` | integer | Number of matches found |
+| `matches` | array | Array of match objects (same format as single check) |
+
+## Error Responses
+
+### 400 Bad Request - Invalid Entities
+
+```json
+{
+  "error": "Invalid entities",
+  "message": "Entity at index 0 must have a non-empty 'subject.full_name' field"
+}
+```
+
+### 400 Bad Request - Too Many Entities
+
+```json
+{
+  "error": "Too many entities",
+  "message": "Maximum 10,000 entities per job"
+}
+```
+
+### 404 Not Found - Job Not Found
+
+```json
+{
+  "error": "Job not found",
+  "message": "Job ID does not exist or belongs to a different tenant"
+}
+```
+
+## Status Codes
+
+| Code | Description |
+|------|-------------|
+| 200 | Success - Job created or retrieved |
+| 400 | Bad Request - Invalid parameters |
+| 401 | Unauthorized - Missing or invalid token |
+| 403 | Forbidden - Insufficient permissions |
+| 404 | Not Found - Job not found |
+| 500 | Internal Server Error |
+
+## Usage Examples
+
+### Python Example
+
+```python
+import requests
+import time
+
+token = "YOUR_TOKEN"
+
+# Create batch job
+response = requests.post(
+    "https://stg.kyc.legaltalent.ai/kyc/jobs",
+    headers={
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    },
+    json={
+        "entities": [
+            {
+                "entity_id": "e1",
+                "subject": {
+                    "full_name": "John Doe",
+                    "nationality": "US"
+                },
+                "lists": ["ofac"]
+            },
+            {
+                "entity_id": "e2",
+                "subject": {
+                    "full_name": "Jane Smith",
+                    "nationality": "UY"
+                },
+                "lists": ["senaclaft_uy"]
+            }
+        ]
+    }
+)
+
+if response.status_code == 200:
+    job_data = response.json()
+    job_id = job_data["job_id"]
+    print(f"Job created: {job_id}")
+    
+    # Poll for completion
+    while True:
+        status_response = requests.get(
+            f"https://stg.kyc.legaltalent.ai/kyc/jobs/{job_id}",
+            headers={"Authorization": f"Bearer {token}"}
+        )
+        
+        if status_response.status_code == 200:
+            status_data = status_response.json()
+            print(f"Status: {status_data['job_status']} - {status_data['processed_entities']}/{status_data['total_entities']}")
+            
+            if status_data['job_status'] == 'completed':
+                print(f"Matches found: {status_data['matches_found']}")
+                for result in status_data['results']:
+                    if result['is_match']:
+                        print(f"Entity {result['entity_id']}: {result['match_count']} matches")
+                break
+            elif status_data['job_status'] == 'failed':
+                print("Job failed")
+                break
+        
+        time.sleep(5)  # Poll every 5 seconds
+else:
+    print(f"Error: {response.json()}")
+```
+
+### JavaScript Example
+
+```javascript
+const token = "YOUR_TOKEN";
+
+async function createBatchJob(entities) {
+  // Create job
+  const createResponse = await fetch(
+    "https://stg.kyc.legaltalent.ai/kyc/jobs",
+    {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ entities })
+    }
+  );
+  
+  const jobData = await createResponse.json();
+  
+  if (!createResponse.ok) {
+    throw new Error(jobData.error);
+  }
+  
+  const jobId = jobData.job_id;
+  console.log(`Job created: ${jobId}`);
+  
+  // Poll for completion
+  while (true) {
+    const statusResponse = await fetch(
+      `https://stg.kyc.legaltalent.ai/kyc/jobs/${jobId}`,
+      {
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      }
+    );
+    
+    const statusData = await statusResponse.json();
+    console.log(`Status: ${statusData.job_status} - ${statusData.processed_entities}/${statusData.total_entities}`);
+    
+    if (statusData.job_status === 'completed') {
+      console.log(`Matches found: ${statusData.matches_found}`);
+      statusData.results.forEach(result => {
+        if (result.is_match) {
+          console.log(`Entity ${result.entity_id}: ${result.match_count} matches`);
+        }
+      });
+      return statusData;
+    } else if (statusData.job_status === 'failed') {
+      throw new Error("Job failed");
+    }
+    
+    // Wait 5 seconds before polling again
+    await new Promise(resolve => setTimeout(resolve, 5000));
+  }
+}
+```
+
+## Best Practices
+
+- **Batch Size**: Keep batches between 100-1,000 entities for optimal performance
+- **Entity IDs**: Always provide `entity_id` to track individual entities in results
+- **Polling**: Poll job status every 5-10 seconds (don't poll too frequently)
+- **Error Handling**: Handle failed entities appropriately
+- **Rate Limits**: Be aware of API rate limits when creating multiple jobs
+
+## Performance
+
+- **Processing Time**: Approximately 1-2 seconds per entity
+- **Maximum Entities**: 10,000 entities per job
+- **Chunking**: Large batches are automatically chunked for processing
+- **Concurrent Processing**: Entities are processed in parallel for faster completion
+
+## Job Statuses
+
+| Status | Description |
+|--------|-------------|
+| `processing` | Job is currently being processed |
+| `completed` | All entities have been processed successfully |
+| `failed` | Job failed (check error details) |
+
+## Integration Tips
+
+1. **Async Processing**: Batch jobs are processed asynchronously - don't wait for completion
+2. **Status Polling**: Implement exponential backoff for status polling
+3. **Result Storage**: Store job results for audit and compliance purposes
+4. **Error Recovery**: Implement retry logic for failed entities
+

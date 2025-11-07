@@ -1,0 +1,288 @@
+---
+title: 'Crypto Wallet Check'
+api: 'POST /kyc/crypto'
+---
+
+Check cryptocurrency wallet addresses against sanctions lists and risk databases. This endpoint validates wallet addresses and checks them against OFAC and other sanctions lists.
+
+## Endpoint
+
+```
+POST /kyc/crypto
+```
+
+## Authentication
+
+Requires `kyc:create` permission. Include your Bearer token in the Authorization header.
+
+## Description
+
+The crypto wallet check endpoint validates cryptocurrency wallet addresses and checks them against sanctions lists. It supports multiple blockchain networks and performs:
+
+1. **Address Validation**: Validates wallet address format for the specified network
+2. **Sanctions Screening**: Checks address against OFAC and other sanctions lists
+3. **Risk Assessment**: Identifies potential risks associated with the wallet
+4. **Transaction History**: Optional analysis of transaction patterns
+
+## Request Body Parameters
+
+<ParamFields>
+  <ParamField
+    name="wallet_address"
+    type="string"
+    required
+    description="Cryptocurrency wallet address to check"
+  />
+  <ParamField
+    name="network"
+    type="string"
+    required
+    description="Blockchain network: 'TRX' (Tron), 'BTC' (Bitcoin), or 'ETH' (Ethereum)"
+  />
+  <ParamField
+    name="lists"
+    type="array"
+    description="Array of list names to check against (default: ['ofac'])"
+  />
+</ParamFields>
+
+## Supported Networks
+
+| Network | Code | Description |
+|---------|------|-------------|
+| Tron | `TRX` | Tron blockchain (TRX, USDT-TRC20) |
+| Bitcoin | `BTC` | Bitcoin blockchain |
+| Ethereum | `ETH` | Ethereum blockchain (ETH, ERC-20 tokens) |
+
+## Request Example
+
+```bash
+curl -X POST https://stg.kyc.legaltalent.ai/kyc/crypto \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "wallet_address": "TXYZabcdefghijklmnopqrstuvwxyz123456",
+    "network": "TRX"
+  }'
+```
+
+### Check Multiple Lists
+
+```bash
+curl -X POST https://stg.kyc.legaltalent.ai/kyc/crypto \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "wallet_address": "TXYZabcdefghijklmnopqrstuvwxyz123456",
+    "network": "TRX",
+    "lists": ["ofac", "un"]
+  }'
+```
+
+## Response Format
+
+### Success Response - No Match
+
+```json
+{
+  "status": "success",
+  "wallet_address": "TXYZabcdefghijklmnopqrstuvwxyz123456",
+  "network": "TRX",
+  "is_match": false,
+  "match_count": 0,
+  "matches": [],
+  "address_valid": true,
+  "processing_time_ms": 1250,
+  "timestamp": "2024-11-22T10:30:00Z"
+}
+```
+
+### Success Response - Match Found
+
+```json
+{
+  "status": "success",
+  "wallet_address": "TXYZabcdefghijklmnopqrstuvwxyz123456",
+  "network": "TRX",
+  "is_match": true,
+  "match_count": 1,
+  "matches": [
+    {
+      "entity_id": "12345",
+      "wallet_address": "TXYZabcdefghijklmnopqrstuvwxyz123456",
+      "list_name": "ofac",
+      "confidence_score": 1.0,
+      "programs": ["SDGT"],
+      "details": {
+        "sanctioned_entity": "Example Entity",
+        "sanction_date": "2020-01-15"
+      }
+    }
+  ],
+  "address_valid": true,
+  "processing_time_ms": 1450,
+  "timestamp": "2024-11-22T10:30:00Z"
+}
+```
+
+## Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `status` | string | Always `"success"` when check completes |
+| `wallet_address` | string | The wallet address that was checked |
+| `network` | string | The blockchain network |
+| `is_match` | boolean | `true` if any matches were found |
+| `match_count` | integer | Number of matches found |
+| `matches` | array | Array of match objects (empty if no matches) |
+| `address_valid` | boolean | Whether the address format is valid for the network |
+| `processing_time_ms` | integer | Total processing time in milliseconds |
+| `timestamp` | string | ISO 8601 timestamp of the check |
+
+### Match Object
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `entity_id` | string | Unique identifier of the sanctioned entity |
+| `wallet_address` | string | The wallet address that matched |
+| `list_name` | string | Name of the list where match was found |
+| `confidence_score` | float | Confidence score (0.0-1.0) |
+| `programs` | array | Array of sanction program codes |
+| `details` | object | Additional details about the match |
+
+## Error Responses
+
+### 400 Bad Request - Invalid Address
+
+```json
+{
+  "error": "Invalid wallet address format",
+  "message": "Address does not match expected format for network TRX"
+}
+```
+
+### 400 Bad Request - Unsupported Network
+
+```json
+{
+  "error": "Unsupported network",
+  "message": "Network 'INVALID' is not supported. Supported networks: TRX, BTC, ETH"
+}
+```
+
+### 400 Bad Request - Missing Parameters
+
+```json
+{
+  "error": "Missing required parameters",
+  "message": "wallet_address and network are required"
+}
+```
+
+## Status Codes
+
+| Code | Description |
+|------|-------------|
+| 200 | Success - Check completed |
+| 400 | Bad Request - Invalid parameters |
+| 401 | Unauthorized - Missing or invalid token |
+| 403 | Forbidden - Insufficient permissions |
+| 500 | Internal Server Error |
+
+## Usage Examples
+
+### Python Example
+
+```python
+import requests
+
+token = "YOUR_TOKEN"
+
+response = requests.post(
+    "https://stg.kyc.legaltalent.ai/kyc/crypto",
+    headers={
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    },
+    json={
+        "wallet_address": "TXYZabcdefghijklmnopqrstuvwxyz123456",
+        "network": "TRX",
+        "lists": ["ofac"]
+    }
+)
+
+if response.status_code == 200:
+    data = response.json()
+    print(f"Match Found: {data['is_match']}")
+    print(f"Match Count: {data['match_count']}")
+    
+    if data['matches']:
+        for match in data['matches']:
+            print(f"Match in {match['list_name']}: {match['details']}")
+else:
+    print(f"Error: {response.json()}")
+```
+
+### JavaScript Example
+
+```javascript
+const token = "YOUR_TOKEN";
+
+async function checkCryptoWallet(address, network) {
+  const response = await fetch(
+    "https://stg.kyc.legaltalent.ai/kyc/crypto",
+    {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        wallet_address: address,
+        network: network,
+        lists: ["ofac"]
+      })
+    }
+  );
+  
+  const data = await response.json();
+  
+  if (response.ok) {
+    console.log(`Match Found: ${data.is_match}`);
+    console.log(`Match Count: ${data.match_count}`);
+    
+    if (data.matches.length > 0) {
+      data.matches.forEach(match => {
+        console.log(`Match in ${match.list_name}:`, match.details);
+      });
+    }
+    
+    return data;
+  } else {
+    console.error("Error:", data.error);
+    throw new Error(data.error);
+  }
+}
+```
+
+## Best Practices
+
+- **Validate address format**: Ensure wallet addresses match the expected format for the network
+- **Check multiple lists**: Use the `lists` parameter to check against multiple sanctions lists
+- **Handle matches**: Implement proper handling for matches found in sanctions lists
+- **Network selection**: Use the correct network code for the blockchain you're checking
+- **Error handling**: Implement proper error handling for invalid addresses or network errors
+
+## Performance
+
+- **Typical Response Time**: 1-2 seconds
+- **Rate Limits**: Subject to API rate limiting (1,000 requests per 5 minutes)
+- **Supported Networks**: TRX (fully supported), BTC and ETH (partial support)
+
+## Integration Tips
+
+1. **Address Validation**: Validate address format client-side before submitting
+2. **Network Detection**: Automatically detect network based on address format when possible
+3. **Batch Processing**: For multiple addresses, make separate requests
+4. **Error Handling**: Handle network-specific errors appropriately
+
